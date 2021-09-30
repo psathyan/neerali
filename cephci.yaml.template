@@ -201,6 +201,19 @@
 #   <test-supported-key>: <value>
 
 
+# =======
+# Logging
+# =======
+# Configurable for logging
+
+# log:
+#   path: <custom-log-dir>
+
+# logstash:
+#   host: <logstash-server>
+#   port: <logstash-endpoint-port>
+#   version: 1  # by default no backward compatibility
+
 # ===============
 # Publish results
 # ===============
