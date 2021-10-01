@@ -208,6 +208,7 @@
 
 # log:
 #   path: <custom-log-dir>
+#   verbose: true | false       # if enabled, logging level is set to debug
 
 # logstash:
 #   host: <logstash-server>
