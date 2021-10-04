@@ -22,7 +22,7 @@ setup(
         "paramiko",
         "pyOpenSSL",
         "pyyaml",
-        "reportportal-client",
+        "python-logstash" "reportportal-client",
         "requests",
     ],
     zip_safe=True,

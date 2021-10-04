@@ -1,90 +1,247 @@
-"""Provides methods associated with logger."""
+"""
+Implements CephCI logging interface.
+
+In this module, we implement a singleton LOG object that can be used by all components
+of CephCI. It supports the below logging methods
+
+    - error
+    - warning
+    - info
+    - debug
+
+Along with the above, it provides support for pushing events to
+
+    - local file
+    - logstash server
+"""
 import logging
+import sys
+from copy import deepcopy
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
+
+import logstash
+
+from .utils import Singleton
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 
 
-def create_or_get_root_log_dir(run_id: str, log_dir: Optional[str] = None) -> str:
-    """
-    Create the root log directory for storing the log files.
-
-    Args:
-        run_id (str):   Unique ID of the test run to be used as root directory
-        log_dir (str):  log directory. default: "/tmp"
-
-    Returns:
-        Full path of the created directory
-    """
-    root_log_dir = Path("/ceph/cephci-jenkins")
-
-    if not root_log_dir.exists():
-        root_log_dir = log_dir if log_dir else "/tmp"
-
-    log_dir = Path(f"{root_log_dir}/cephci-run-{run_id}")
-    try:
-        log_dir.mkdir(exist_ok=True)
-    except FileExistsError:
-        print("Unable to create log directory.")
-        raise
-
-    return str(log_dir)
+class LoggerInitializationException:
+    pass
 
 
-def add_log_file_handler(run_id: str, file_name: str, log_level: int) -> None:
-    """
-    Adds a handler to the logger using the given path and filename.
+class Log(metaclass=Singleton):
+    """CephCI Logger object to help streamline logging."""
 
-    Args:
-        run_id (str):       Unique execution identifier
-        file_name (str):    Name of the file to be used for storing the logs
-        log_level (int):    verbosity level for the logging
+    def __init__(
+        self, run_id: str, config: Dict, verbose: Optional[bool] = None
+    ) -> None:
+        """
+        Initializes the logging mechanism based on the inputs provided.
 
-    Returns:
-        None
-    """
-    log_dir = create_or_get_root_log_dir(run_id)
-    log_file = Path(f"{log_dir}/{file_name}").absolute()
-    _formatter = logging.Formatter(LOG_FORMAT)
+        Console and file logging is enabled. If logstash server information is provided,
+        a handler is also added.
 
-    file_handler = logging.FileHandler(str(log_file))
-    file_handler.setFormatter(_formatter)
-    file_handler.setLevel(log_level)
+        Args:
+            run_id (str):   Unique execution identifier
+            config (dict):  Global configuration of the execution. Parses the dict for
+                            the following keys
+                                - log:
+                                    path:
+                                    verbose:
+                                - logstash:
+                                    host:
+                                    port:
+                                    version:
+            verbose (bool): If enabled, debug logging is set else info level
+        Returns:
+            None
+        """
+        self._run_id = run_id
+        self._config = deepcopy(config)
+        self._logger = logging.getLogger(__name__)
 
-    logger = logging.getLogger()
-    logger.addHandler(file_handler)
-    logger.info(f"Starting to log to {str(log_file)}.")
+        self.log_level = logging.INFO
+        self.log_format = LOG_FORMAT
 
+        if config.get("log", {}).get("verbose"):
+            self.log_level = logging.DEBUG
 
-def close_and_remove_file_handlers(logger=logging.getLogger()):
-    """
-    Close FileHandlers and then remove them from the loggers handlers list.
+        if verbose:
+            self.log_level = logging.DEBUG
 
-    Args:
-        logger: the logger in which to remove the handlers from, defaults to root logger
+        logging.basicConfig(
+            handlers=[logging.StreamHandler(sys.stdout)],
+            level=self.log_level,
+            format=self.log_format,
+        )
 
-    Returns:
-        None
-    """
-    handlers = logger.handlers[:]
-    for handler in handlers:
-        if isinstance(handler, logging.FileHandler):
+        self.log_dir = self.create_root_folder()
+
+        if config.get("logstash"):
+            self._add_logstash_handler()
+
+        self.metadata = dict({"test_run_id": run_id, "test_tool": "cephci"})
+
+    def close(self) -> None:
+        """Close all log handlers."""
+        handlers = self._logger.handlers[:]
+        for handler in handlers:
             handler.close()
-            logger.removeHandler(handler)
+            self._logger.removeHandler(handler)
 
+    def _add_logstash_handler(self) -> None:
+        """Add Logstash handler."""
+        host = self._config["logstash"]["host"]
+        port = self._config["logstash"]["port"]
+        version = self._config["logstash"].get("version", 1)
+        handler = logstash.TCPLogstashHandler(
+            host=host,
+            port=port,
+            version=version,
+        )
+        handler.setLevel(self.log_level)
+        self._logger.addHandler(handler)
 
-def close_log_handlers(logger=logging.getLogger()):
-    """
-    Close FileHandlers and then remove them from the loggers handlers list.
+        server = f"tcp://{host}:{port}"
+        self._logger.debug(f"Log events are also pushed to {server}")
 
-    Args:
-        logger: the logger in which to remove the handlers from, defaults to root logger
+    def create_root_folder(self) -> str:
+        """
+        Create the logging folder based on the configuration provided by the user.
 
-    Returns:
-        None
-    """
-    handlers = logger.handlers[:]
-    for handler in handlers:
-        handler.close()
-        logger.removeHandler(handler)
+        Returns:
+            str - path to the root folder.
+
+        Raises:
+            LoggerInitializationException.
+        """
+        root_log_dir = Path("/ceph/cephci-jenkins")
+
+        if not root_log_dir.exists():
+            if self._config.get("log", {}).get("path"):
+                root_log_dir = Path(self._config["log"]["path"])
+            else:
+                root_log_dir = Path("/tmp")
+
+        try:
+            log_dir = Path(f"{root_log_dir}/cephci-run-{self._run_id}")
+            log_dir.mkdir(exist_ok=True)
+
+            return str(log_dir)
+        except FileExistsError:
+            self._logger.error("Unable to create log directory.")
+
+        raise LoggerInitializationException
+
+    def add_file_handler(self, log_file: str) -> None:
+        """
+        Adds a file handler to the logging mechanism.
+
+        Only one file handler is enabled at a time.
+
+        Args:
+            log_file (str):     Name to be given to the log file.
+
+        Returns:
+            None
+        """
+        self.close_file_handler()
+        _log_file = Path(f"{self.log_dir}/{log_file}").absolute()
+        _formatter = logging.Formatter(LOG_FORMAT)
+
+        _file_handler = logging.FileHandler(str(_log_file))
+        _file_handler.setFormatter(_formatter)
+        _file_handler.setLevel(self.log_level)
+
+        self._logger.addHandler(_file_handler)
+        self.debug(f"Log events are also pushed to {_log_file}")
+
+    def close_file_handler(self):
+        """Close any file handler associated with the logger."""
+        handlers = self._logger.handlers[:]
+        for handler in handlers:
+            if isinstance(handler, logging.FileHandler):
+                handler.close()
+                self._logger.removeHandler(handler)
+
+    def _log(self, level: str, message: Any, metadata: Optional[Dict] = None) -> None:
+        """
+        Log the given message using the provided level along with the metadata.
+
+        Args:
+            level (str):        Log level
+            message (Any):      The message that needs to be logged
+            metadata (dict):    Extra information to be appended.
+
+        Returns:
+            None.
+        """
+        log = {
+            "info": self._logger.info,
+            "debug": self._logger.debug,
+            "warning": self._logger.warning,
+            "error": self._logger.error,
+        }
+        extra = None
+        if self._config.get("logstash"):
+            extra = deepcopy(self.metadata)
+            if metadata:
+                extra.update(metadata)
+
+            print(extra)
+
+        log[level](message, extra=extra)
+
+    def info(self, message: Any, metadata: Optional[Dict] = None) -> None:
+        """
+        Log with info level the provided message and extra data.
+
+        Args:
+            message (Any):      The message to be logged.
+            metadata (dict):    The metadata that would be sent along with the message.
+
+        Returns:
+            None
+        """
+        self._log("info", message, metadata)
+
+    def debug(self, message: Any, metadata: Optional[Dict] = None) -> None:
+        """
+        Log with debug level the provided message and extra data.
+
+        Args:
+            message (str):      The message to be logged.
+            metadata (dict):    The metadata that would be sent along with the message.
+
+        Returns:
+            None
+        """
+        self._log("debug", message, metadata)
+
+    def warning(self, message: Any, metadata: Optional[Dict] = None) -> None:
+        """
+        Log with warning level the provided message and extra data.
+
+        Args:
+            message (Any):      The message to be logged.
+            metadata (dict):    The metadata that would be sent along with the message.
+
+        Returns:
+            None
+        """
+        self._log("warning", message, metadata)
+
+    def error(self, message: Any, metadata: Optional[Dict] = None) -> None:
+        """
+        Log with error level the provided message and extra data.
+
+        Args:
+            message (Any):      The message to be logged.
+            metadata (dict):    The metadata that would be sent along with the message.
+
+        Returns:
+            None
+        """
+        self._log("error", message, metadata)

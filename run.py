@@ -2,17 +2,12 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import yaml
 from docopt import docopt
 
-from utils.log import (
-    LOG_FORMAT,
-    add_log_file_handler,
-    close_log_handlers,
-    create_or_get_root_log_dir,
-)
+from utils.log import LOG_FORMAT, Log
 from utils.utils import generate_unique_id, merge_dicts
 
 usage = """
@@ -23,7 +18,7 @@ Usage:
   run.py (--conf <conf-file>)...
     [--rhcs <rhcs-version>]
     [--build <build-type>]
-    [--clusters-spec <cluster-spec>]
+    [--vm-spec <vm-spec>]
     [--test-suite <test-suite>]...
     [--verbose]
     [--cleanup <instances-prefix>]
@@ -36,7 +31,7 @@ Options:
   --rhcs <rhcs-version>             Red Hat Ceph Storage version
   --build <build-type>              Type of build to be used for deployment. Default the
                                     latest CDN bits
-  --clusters-spec <cluster-spec>    System Under Test layout file
+  --vm-spec <vm-spec>               System Under Test layout file
   --test-suite <test-suite>         Absolute test suite file. Supports multiple values
   --verbose                         Increases the log level. Default, log level is info
 """
@@ -46,37 +41,24 @@ logging.basicConfig(
 )
 
 
-def run(conf: Dict, cli_args: Dict) -> None:
+def run(conf: Dict, cleanup: Optional[bool] = None) -> None:
     """
     Wrapper method that triggers the workflows based on the provided arguments.
 
     Args:
         conf (dict):        Single configuration dictionary passed to the module.
-        cli_args (dict)     CLI arguments passed to run.py. Refer cepchi.yaml.template
-                            for supported key-value pairs
+        cleanup (bool):     Is enabled only if instances is to be cleaned up.
     Returns:
         None
     Raises:
         Exception
     """
     # Always check if the operation is cleanup first before proceeding with workflow
-    if cli_args.get("--cleanup"):
-        # cleanup_ceph_nodes(configs["compute"]["credential"], cli_args["--cleanup"])
-        print("Nothing to do")
+    # cleanup_nodes(conf)
+    if cleanup:
         return
 
-    # CLI args must have the highest precedence
-    if cli_args["--rhcs"]:
-        conf["rhcs"] = cli_args["--rhcs"]
-
-    if cli_args["--build"]:
-        conf["build"] = cli_args["--build"]
-
-    if cli_args["--clusters-spec"]:
-        conf["compute"]["spec"] = cli_args["--clusters-spec"]
-
-    if cli_args["--test-suite"]:
-        conf["test_suites"] = cli_args["--test-suite"]
+    LOG.info("Successfully completed the execution")
 
 
 if __name__ == "__main__":
@@ -94,6 +76,19 @@ if __name__ == "__main__":
                 config = yaml.safe_load(fh)
                 merge_dicts(config, configs)
 
+        # CLI args must have the highest precedence
+        if args["--rhcs"]:
+            configs["rhcs"] = args["--rhcs"]
+
+        if args["--build"]:
+            configs["build"] = args["--build"]
+
+        if args["--vm-spec"]:
+            configs["compute"]["spec"] = args["--vm-spec"]
+
+        if args["--test-suite"]:
+            configs["test_suites"] = args["--test-suite"]
+
         # Initiate the loggers
         msg = """
         Note :
@@ -102,17 +97,13 @@ if __name__ == "__main__":
         """
         print(msg)
 
-        log_level = logging.DEBUG if args.get("--verbose") else logging.INFO
-        create_or_get_root_log_dir(run_id, config.get("log", {}).get("path"))
-        add_log_file_handler(run_id, "startup.log", log_level)
+        LOG = Log(run_id=run_id, config=configs, verbose=args.get("--verbose"))
+        LOG.add_file_handler("startup.log")
 
-        LOG.info("Testing from info level")
-        LOG.debug("Testing from debug level")
-
+        run(configs, args.get("--cleanup"))
         LOG.debug(args)
-        run(configs, args)
     except BaseException as be:  # no-qa
         LOG.error(be)
         sys.exit(1)
     finally:
-        close_log_handlers()
+        LOG.close()
