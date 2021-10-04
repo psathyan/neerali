@@ -1,10 +1,19 @@
 """Module contains use workflows for the core package."""
-import logging
 import random
 from string import ascii_lowercase, digits
 from typing import Dict
 
-LOG = logging.getLogger(__name__)
+
+class Singleton(type):
+    """Ensures a single instance."""
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances.keys():
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+
+        return cls._instances[cls]
 
 
 def merge_dicts(source: Dict, target: Dict) -> None:
