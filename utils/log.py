@@ -76,7 +76,14 @@ class Log(metaclass=Singleton):
         if self._config.get("logstash"):
             self._add_logstash_handler()
 
-        self.metadata = dict({"test_run_id": self._run_id, "testing_tool": "cephci"})
+        self.metadata = dict(
+            {
+                "test_run_id": self._run_id,
+                "testing_tool": "cephci",
+                "rhcs": self._config["rhcs"],
+                "test_build": self._config.get("build", "released"),
+            }
+        )
 
     def close(self) -> None:
         """Close all log handlers."""

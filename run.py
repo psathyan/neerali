@@ -41,17 +41,22 @@ logging.basicConfig(
 )
 
 
-def run() -> None:
+def run(conf: CephCIConfig) -> None:
     """
     Wrapper method that triggers the workflows based on the provided arguments.
 
     This method uses the CephCIConf variable to read the configuration passed to the
-    scripts by the user. Refer the cephci.yaml.template for supported keys and sections
+    scripts by the user. Refer the cephci.yaml.template for supported keys and sections.
+
+    Args:
+        conf (CephCIConfig):    test configurations passed by the user
+
+    Returns:
+        None
 
     Raises:
         Exception
     """
-    conf = CephCIConfig()
     # Always check if the operation is cleanup first before proceeding with workflow
     # cleanup_nodes(conf)
     if conf.get("cleanup"):
@@ -110,11 +115,10 @@ if __name__ == "__main__":
         LOG = Log()
         LOG.add_file_handler("startup.log")
 
-        run()
-        LOG.debug(args)
+        run(cephci_conf)
+
     except BaseException as be:  # no-qa
-        print("Got an exception")
-        print(be)
+        LOG.error(be)
         sys.exit(1)
     finally:
         LOG.close()
