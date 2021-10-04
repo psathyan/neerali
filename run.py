@@ -2,11 +2,11 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Optional
 
 import yaml
 from docopt import docopt
 
+from utils.config import CephCIConfig
 from utils.log import LOG_FORMAT, Log
 from utils.utils import generate_unique_id, merge_dicts
 
@@ -41,21 +41,20 @@ logging.basicConfig(
 )
 
 
-def run(conf: Dict, cleanup: Optional[bool] = None) -> None:
+def run() -> None:
     """
     Wrapper method that triggers the workflows based on the provided arguments.
 
-    Args:
-        conf (dict):        Single configuration dictionary passed to the module.
-        cleanup (bool):     Is enabled only if instances is to be cleaned up.
-    Returns:
-        None
+    This method uses the CephCIConf variable to read the configuration passed to the
+    scripts by the user. Refer the cephci.yaml.template for supported keys and sections
+
     Raises:
         Exception
     """
+    conf = CephCIConfig()
     # Always check if the operation is cleanup first before proceeding with workflow
     # cleanup_nodes(conf)
-    if cleanup:
+    if conf.get("cleanup"):
         return
 
     LOG.info("Successfully completed the execution")
@@ -68,7 +67,7 @@ if __name__ == "__main__":
         run_id = generate_unique_id(length=6)
 
         # Read test configuration and CLI arguments
-        configs = dict()
+        configs = dict({"run_id": run_id})
 
         for file_ in args["--conf"]:
             file_ = Path(file_).absolute()
@@ -89,6 +88,17 @@ if __name__ == "__main__":
         if args["--test-suite"]:
             configs["test_suites"] = args["--test-suite"]
 
+        if args["--cleanup"]:
+            configs["cleanup"] = args["--cleanup"]
+
+        if args["--verbose"]:
+            if "log" in configs.keys():
+                configs["log"]["verbose"] = True
+            else:
+                configs["log"] = dict({"verbose": True})
+
+        cephci_conf = CephCIConfig(configs)
+
         # Initiate the loggers
         msg = """
         Note :
@@ -97,13 +107,14 @@ if __name__ == "__main__":
         """
         print(msg)
 
-        LOG = Log(run_id=run_id, config=configs, verbose=args.get("--verbose"))
+        LOG = Log()
         LOG.add_file_handler("startup.log")
 
-        run(configs, args.get("--cleanup"))
+        run()
         LOG.debug(args)
     except BaseException as be:  # no-qa
-        LOG.error(be)
+        print("Got an exception")
+        print(be)
         sys.exit(1)
     finally:
         LOG.close()

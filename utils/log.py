@@ -22,6 +22,7 @@ from typing import Any, Dict, Optional
 
 import logstash
 
+from .config import CephCIConfig
 from .utils import Singleton
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
@@ -34,41 +35,34 @@ class LoggerInitializationException:
 class Log(metaclass=Singleton):
     """CephCI Logger object to help streamline logging."""
 
-    def __init__(
-        self, run_id: str, config: Dict, verbose: Optional[bool] = None
-    ) -> None:
+    def __init__(self) -> None:
         """
         Initializes the logging mechanism based on the inputs provided.
 
         Console and file logging is enabled. If logstash server information is provided,
         a handler is also added.
 
-        Args:
-            run_id (str):   Unique execution identifier
-            config (dict):  Global configuration of the execution. Parses the dict for
-                            the following keys
-                                - log:
-                                    path:
-                                    verbose:
-                                - logstash:
-                                    host:
-                                    port:
-                                    version:
-            verbose (bool): If enabled, debug logging is set else info level
+        From CephCIConf, the following fields are parsed.
+
+            run_id:   Unique execution identifier
+            log:  Global configuration of the execution. Parses the dict for
+                path:
+                verbose:
+            logstash:
+                host:
+                port:
+                version:
         Returns:
             None
         """
-        self._run_id = run_id
-        self._config = deepcopy(config)
-        self._logger = logging.getLogger(__name__)
+        self._config = deepcopy(CephCIConfig())
+        self._run_id = self._config["run_id"]
+        self._logger = logging.getLogger()
 
         self.log_level = logging.INFO
         self.log_format = LOG_FORMAT
 
-        if config.get("log", {}).get("verbose"):
-            self.log_level = logging.DEBUG
-
-        if verbose:
+        if self._config.get("log", {}).get("verbose"):
             self.log_level = logging.DEBUG
 
         logging.basicConfig(
@@ -79,10 +73,10 @@ class Log(metaclass=Singleton):
 
         self.log_dir = self.create_root_folder()
 
-        if config.get("logstash"):
+        if self._config.get("logstash"):
             self._add_logstash_handler()
 
-        self.metadata = dict({"test_run_id": run_id, "test_tool": "cephci"})
+        self.metadata = dict({"test_run_id": self._run_id, "testing_tool": "cephci"})
 
     def close(self) -> None:
         """Close all log handlers."""
@@ -189,8 +183,6 @@ class Log(metaclass=Singleton):
             extra = deepcopy(self.metadata)
             if metadata:
                 extra.update(metadata)
-
-            print(extra)
 
         log[level](message, extra=extra)
 
