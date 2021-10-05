@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Module contains use workflows for the core package."""
 import random
 from string import ascii_lowercase, digits

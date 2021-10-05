@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """CephCI singleton configuration model."""
 from .utils import Singleton
 

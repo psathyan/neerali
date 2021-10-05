@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Implements CephCI logging interface.
 

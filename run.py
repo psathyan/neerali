@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Entry point for Red Hat Ceph QE CI."""
 import logging
 import sys
