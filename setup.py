@@ -23,7 +23,7 @@ setup(
         "pyOpenSSL",
         "pyyaml",
         "python-logstash",
-        "reportportal-client",
+        "reportportal-client~=3.0",
         "requests",
     ],
     zip_safe=True,
