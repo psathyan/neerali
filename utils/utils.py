@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 from string import ascii_lowercase, digits
 from typing import Dict
+
 from yaml import safe_load
 
 
@@ -58,6 +59,6 @@ def yaml_to_dict(filename: str) -> Dict:
     """Convert the contents of YAML to a dict."""
     file_name = Path(filename).absolute()
 
-    with file_name.open('r') as fh:
+    with file_name.open("r") as fh:
         content = safe_load(fh)
         return content
