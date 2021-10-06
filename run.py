@@ -2,14 +2,12 @@
 """Entry point for Red Hat Ceph QE CI."""
 import logging
 import sys
-from pathlib import Path
 
-import yaml
 from docopt import docopt
 
 from utils.config import CephCIConfig
 from utils.log import LOG_FORMAT, Log
-from utils.utils import generate_unique_id, merge_dicts
+from utils.utils import generate_unique_id, merge_dicts, yaml_to_dict
 
 usage = """
 An orchestrator that calls the relevant methods based on the provided workflow.
@@ -76,10 +74,8 @@ if __name__ == "__main__":
         configs = dict({"run_id": run_id})
 
         for file_ in args["--conf"]:
-            file_ = Path(file_).absolute()
-            with file_.open("r") as fh:
-                config = yaml.safe_load(fh)
-                merge_dicts(config, configs)
+            config = yaml_to_dict(file_)
+            merge_dicts(config, configs)
 
         # CLI args must have the highest precedence
         if args["--rhcs"]:
