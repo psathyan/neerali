@@ -77,10 +77,10 @@
 # compute:
 #   type: softlayer
 #   spec: <configuration-file-to-be-used>       # example rhel-8-4-x86_64.yaml
+#   endpoint: <compute-endpoint>
 #   credentials:
 #     username: <username>
 #     api_key: <IBM Cloud service/user account API key>
-#     endpoint: <IBM Cloud endpoint>
 
 
 # =========================
