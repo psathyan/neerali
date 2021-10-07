@@ -6,10 +6,10 @@ from time import time
 
 from reportportal_client import ReportPortalServiceAsync
 
+from models.testdetails import TestCaseMeta
+
 from .config import CephCIConfig
 from .log import Log
-
-from models.testdetails import TestCaseMeta
 
 log = Log()
 
