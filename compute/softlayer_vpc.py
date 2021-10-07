@@ -1,49 +1,112 @@
 # -*- coding: utf-8 -*-
-"""Provider """
+"""IBM Cloud VPC provider for provisioning VMs in a VPC environment."""
 import re
-import socket
 from copy import deepcopy
 from datetime import datetime, timedelta
 from time import sleep
-from typing import List
+from typing import Dict, List
 
 from ibm_cloud_networking_services import DnsSvcsV1
 from ibm_cloud_sdk_core.api_exception import ApiException
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_vpc import VpcV1  # noqa
 
+from compute import CephVMNode
 from utils.config import CephCIConfig
-from utils.parallel import parallel
 from utils.log import Log
+from utils.parallel import parallel
 
 LOG = Log()
 CONF = CephCIConfig()
 
-socket.setdefaulttimeout(280)
 
-
-def get_ibm_service(access_key: str, service_url: str):
-    """
-    Get ibm service
-    Args:
-        accessKey    The access key(API key) of the user.
-    """
+def get_ibm_service() -> VpcV1:
+    """Return the authenticated VPC client."""
+    access_key = CONF["compute"]["credential"]["api-key"]
     authenticator = IAMAuthenticator(access_key)
     service = VpcV1(authenticator=authenticator)
-    service.set_service_url(service_url)
+
+    endpoint = CONF["compute"]["endpoint"]
+    service.set_service_url(endpoint)
+
     return service
 
 
-def get_dns_service(access_key: str):
-    """
-    Get dns service
-    Args:
-        accessKey    The access key(API key) of the user.
-    """
+def get_dns_service() -> DnsSvcsV1:
+    """Return the authenticated DNS API client."""
+    access_key = CONF["compute"]["credential"]["api-key"]
     authenticator = IAMAuthenticator(access_key)
-    dns_svc = DnsSvcsV1(authenticator=authenticator)
-    dns_svc.set_service_url("https://api.dns-svcs.cloud.ibm.com/v1")
-    return dns_svc
+    dnssvc = DnsSvcsV1(authenticator=authenticator)
+    dnssvc.set_service_url("https://api.dns-svcs.cloud.ibm.com/v1")
+
+    return dnssvc
+
+
+def get_resource_id(resource_name: str, json_obj: Dict) -> str:
+    """
+    Return the ID of the provided resource from the given response.
+
+    Args:
+        resource_name (str):    Name of the resource whose ID needs to be found.
+        json_obj (dict):        Response received from the collection request.
+    """
+    resource_url = json_obj["first"]["href"]
+    resource_list_name = re.search(r"v1/(.*?)\?", resource_url).group(1)
+    for i in json_obj[resource_list_name]:
+        if i["name"] == resource_name:
+            return i["id"]
+
+
+def get_dns_zone_id(dns_zone_name, json_obj) -> str:
+    """
+    Gets the Zone ID with Zone name
+    Args:
+        dns_zone_name (str):    Name of the zone whose ID needs to be found.
+        json_obj (dict):        Response received from the collection request.
+    """
+    for i in json_obj["dnszones"]:
+        if i["name"] == dns_zone_name:
+            return i["id"]
+
+
+def remove_dns_records(name: str, zone_name: str) -> None:
+    """
+    Removes the DNS PTR & A records for the provided node name.
+
+    Args:
+        name          Name(pattern) of DNS records for type:A
+        zone_name     Name of a zone
+    """
+    LOG.info(f"Removing DNS records which has name: {name}")
+    try:
+        dnssvc = get_dns_service()
+        dns_zone = dnssvc.list_dnszones("a55534f5-678d-452d-8cc6-e780941d8e31")
+        dns_zone_id = get_dns_zone_id(zone_name, dns_zone.get_result())  # noqa
+        resource = dnssvc.list_resource_records(
+            instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
+            dnszone_id=dns_zone_id,
+        )
+        records_a = [
+            i
+            for i in resource.get_result()["resource_records"]
+            if i["type"] == "A" and name in i["name"]
+        ]
+        for record in records_a:
+            if record["linked_ptr_record"] is not None:
+                LOG.info(f"Deleting dns record {record['linked_ptr_record']['name']}")
+                dnssvc.delete_resource_record(
+                    instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
+                    dnszone_id=dns_zone_id,
+                    record_id=record["linked_ptr_record"]["id"],
+                )
+            LOG.info(f"Deleting dns record {record['name']}")
+            dnssvc.delete_resource_record(
+                instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
+                dnszone_id=dns_zone_id,
+                record_id=record["id"],
+            )
+    except Exception:
+        raise AssertionError(f"Failed to remove DNS record: {name}")
 
 
 # Custom exception objects
@@ -71,57 +134,31 @@ class NodeDeleteFailure(Exception):
     pass
 
 
-class SoftlayerVPC:
+class SoftlayerVPC(CephVMNode):
     """Represent the VMNode required for cephci."""
 
-    def __init__(self, access_key: str, service_url: str) -> None:
+    def __init__(self) -> None:
         """
-        Initialize the instance using the provided information.
-
-        Args:
-            accessKey    The access key(API key) of the user.
-            serviceUrl   Url for IBM cloud
-        """
-        self.service = get_ibm_service(access_key, service_url)
+        Initialize the instance using the provided information."""
+        self.service = get_ibm_service()
         self.node = None
 
         # CephVM attributes
         self._subnet: list = list()
         self._roles: list = list()
 
-    @staticmethod
-    def get_id_by_name(name_of_resource, json_obj):
+    def wait_until_vm_state_running(self, instance_id: str) -> None:
         """
-        Gets ID of the resource when name of the resource is given
-        Args:
-            name_of_resource    Name of the resource.
-            json_obj            json object
-        """
-        resource_url = json_obj["first"]["href"]
-        resource_list_name = re.search(r"v1/(.*?)\?", resource_url).group(1)
-        for i in json_obj[resource_list_name]:
-            if i["name"] == name_of_resource:
-                return i["id"]
-        return []
+        Wait until the VM moves to running state.
 
-    @staticmethod
-    def get_id_by_name_zones(name_of_zone, json_obj):
-        """
-        Gets the Zone ID with Zone name
         Args:
-            name_of_zone    Name of the zone.
-            json_obj        json object
-        """
-        for i in json_obj["dnszones"]:
-            if i["name"] == name_of_zone:
-                return i["id"]
-        return []
+            instance_id (str):  Id of node instance
 
-    def wait_until_vm_state_running(self, instance_id):
-        """
-        Wait till the VM moves to running state.
-        Args:
-            instance_id    Id of node instance
+        Returns:
+            None
+
+        Raises:
+            NodeError
         """
         start_time = datetime.now()
         end_time = start_time + timedelta(seconds=1200)
@@ -129,124 +166,79 @@ class SoftlayerVPC:
         node = None
         while end_time > datetime.now():
             sleep(5)
-            node = self.service.get_instance(instance_id)
-            node_details = node.get_result()
+            resp = self.service.get_instance(instance_id)
+            node = resp.get_result()
 
-            if node_details["status"] == "running":
+            if node["status"] == "running":
                 end_time = datetime.now()
                 duration = (end_time - start_time).total_seconds()
                 LOG.info(
-                    f"{node_details['name']} moved to running state in {duration}"
-                    " seconds.",
+                    f"{node['name']} moved to running state in {duration} seconds.",
                 )
                 return
 
-            if node_details["status"] == "error":
-                msg = (
-                    "Unknown Error"
-                    if not node.extra
-                    else node.extra.get("fault").get("message")
-                )
-                raise NodeError(msg)
+            if node["status"] == "error":
+                raise NodeError(f"{node['name']} has moved to error state.")
 
-        raise NodeError(f"{node.name} is in {node.state} state.")
+        raise NodeError(f"{node['name']} is in {node['status']} state.")
 
-    def wait_until_node_del(self, node_name, timeout):
+    def wait_until_nodes_delete(self, pattern: str, timeout: int) -> None:
         """
-        Wait till the VM deleted
+        Wait until the node is removed.
+
         Args:
-            node_names     Name(patter) of the instance Name
-            timeout        Max time to wait for the deletion to complete
+            pattern (str):  The pattern to be used to filter the node names.
+            timeout (int):  Max time to wait for the deletion to complete
+
+        Returns:
+            None
         """
         try:
             start_time = datetime.now()
             end_time = start_time + timedelta(seconds=timeout)
+            nodes = list()
             while end_time > datetime.now():
                 sleep(5)
                 instance_list = self.service.list_instances()
-                node_list = [
+                nodes = [
                     i
                     for i in instance_list.get_result()["instances"]
-                    if node_name in i["name"]
+                    if pattern in i["name"]
                 ]
-                if not node_list:
+                if not nodes:
                     return
-            instance_list = self.service.list_instances()
-            node_list = [
-                i
-                for i in instance_list.get_result()["instances"]
-                if node_name in i["name"]
-            ]
-            if not node_list:
-                return
-            else:
-                raise NodeError(f"Unable to delete instance : {node_list}")
+
+            raise NodeError(f"Unable to remove the following instances : {nodes}")
         except ApiException as ae:
             if ae.code == 404:
                 return
-            raise NodeError("Unable to delete the node")
 
-    def clean_up_dns_record(self, access_key, name, zone_name):
-        """
-        Removes DNS Records
-        Args:
-            access_key    The access key(API key) of the user.
-            name          Name(pattern) of DNS records for type:A
-            zone_name     Name of a zone
-        """
-        LOG.info(f"Removing DNS records which has name: {name}")
-        try:
-            dnssvc = get_dns_service(access_key)
-            dns_zone = dnssvc.list_dnszones("a55534f5-678d-452d-8cc6-e780941d8e31")
-            dns_zone_id = self.get_id_by_name_zones(zone_name, dns_zone.get_result())   # noqa
-            resource = dnssvc.list_resource_records(
-                instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
-                dnszone_id=dns_zone_id,
-            )
-            records_a = [
-                i
-                for i in resource.get_result()["resource_records"]  # noqa
-                if i["type"] == "A" and name in i["name"]
-            ]
-            for record in records_a:
-                if record["linked_ptr_record"] is not None:
-                    LOG.info(
-                        f"Deleting dns record {record['linked_ptr_record']['name']}"
-                    )
-                    dnssvc.delete_resource_record(
-                        instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
-                        dnszone_id=dns_zone_id,
-                        record_id=record["linked_ptr_record"]["id"],
-                    )
-                LOG.info(f"Deleting dns record {record['name']}")
-                dnssvc.delete_resource_record(
-                    instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
-                    dnszone_id=dns_zone_id,
-                    record_id=record["id"],
-                )
-        except Exception:
-            raise AssertionError(f"Failed to remove DNS record: {name}")
+        raise NodeError("Unable to delete the node")
 
-    def clean_up_instances(self, access_key, node_name, zone_name, timeout):
+    def remove_instances(self, pattern: str, zone_name: str, timeout: int) -> None:
         """
-        Method to clean up instances in ibm cloud.
+        Remove all instances that match the given pattern.
+
         Args:
-            access_key   The access key(API key) of the user.
-            node_name    Name of node instance
-            zone_name    Name of zone
-            timeout      Max time to wait for the deletion to complete
+            pattern (str):      The substring to be search among instance names.
+            zone_name (str):    The name of the DNS zone to used for removal of records.
+            timeout (int):      Timeout in seconds provided for cleanup.
+
+        Returns:
+            None
         """
-        pattern = node_name
-        self.clean_up_dns_record(access_key, pattern, zone_name)
-        instance_list = self.service.list_instances()
-        del_instance_list = [
-            i for i in instance_list.get_result()["instances"] if pattern in i["name"]
+        remove_dns_records(pattern, zone_name)
+        instances = self.service.list_instances()
+        removal_nodes = [
+            i for i in instances.get_result()["instances"] if pattern in i["name"]
         ]
+
         with parallel() as p:
-            for instance in del_instance_list:
+            for instance in removal_nodes:
                 LOG.info(f"Destroying node {instance['name']} with timeout:{timeout}")
                 p.spawn(self.service.delete_instance, instance["id"])
-            self.wait_until_node_del(node_name, timeout)
+
+        self.wait_until_nodes_delete(pattern, timeout)
 
     def create(
         self,
@@ -254,7 +246,6 @@ class SoftlayerVPC:
         image_name: str,
         network_name: str,
         private_key: str,
-        access_key: str,
         vpc_name: str,
         profile: str,
         group_access: str,
@@ -272,7 +263,6 @@ class SoftlayerVPC:
             image_name          Name of the image to use for creating the VM.
             network_name        Name of the Network
             private_key         Private ssh key
-            access_key          Users IBM cloud access key
             vpc_name            Name of VPC
             profile             Node profile. EX: "bx2-2x8"
             group_access        group security policy
@@ -284,24 +274,32 @@ class SoftlayerVPC:
 
         """
         LOG.info(f"Starting to create VM with name {node_name}")
-        try:
 
+        try:
             subnets = self.service.list_subnets()
-            subnet_id = self.get_id_by_name(network_name, subnets.get_result())
+            subnet_id = get_resource_id(network_name, subnets.get_result())
+
             images = self.service.list_images()
-            image_id = self.get_id_by_name(image_name, images.get_result())
+            image_id = get_resource_id(image_name, images.get_result())
 
             keys = self.service.list_keys()
-            key_id = self.get_id_by_name(private_key, keys.get_result())
+            key_id = get_resource_id(private_key, keys.get_result())
+
             security_group = self.service.list_security_groups()
-            security_group_id = self.get_id_by_name(
+            security_group_id = get_resource_id(
                 group_access, security_group.get_result()
             )
+
             vpcs = self.service.list_vpcs()
-            vpc_id = self.get_id_by_name(vpc_name, vpcs.get_result())
+            vpc_id = get_resource_id(vpc_name, vpcs.get_result())
 
             # Construct a dict representation of a KeyIdentityById model
             key_identity_model = {"id": key_id}
+
+            # IBM-Cloud CI SSH key
+            key_identity_shared = {
+                "fingerprint": "SHA256:OkzMbGLDIzqUcZoH9H/j5o/v01trlqKqp5DaUpJ0tcQ"
+            }
 
             # Construct a dict representation of a SecurityGroupIdentityById model
             security_group_identity_model = {"id": security_group_id}
@@ -316,6 +314,7 @@ class SoftlayerVPC:
             network_interface_prototype_model = {
                 "allow_ip_spoofing": False,
                 "subnet": subnet_identity_model,
+                "security_groups": [security_group_identity_model],
             }
 
             # Construct a dict representation of a InstanceProfileIdentityByName model
@@ -326,8 +325,9 @@ class SoftlayerVPC:
 
             volume_attachment_list = []
             for i in range(0, no_of_volumes):
-                volume_attachment_volume_prototype_instance_context_model1 = dict(
-                    {"name": f"{node_name.lower()} - {i}"}
+                volume_attachment_volume_prototype_instance_context_model1 = dict()
+                volume_attachment_volume_prototype_instance_context_model1["name"] = (
+                    node_name.lower() + "-" + str(i)
                 )
                 volume_attachment_volume_prototype_instance_context_model1[
                     "profile"
@@ -355,8 +355,10 @@ class SoftlayerVPC:
             # Construct a dict representation of a ZoneIdentityByName model
             zone_identity_model = {"name": zone_id_model_name}
 
-            # Construct a dict representation of InstancePrototypeInstanceByImage model
-            instance_prototype_model = dict({"keys": [key_identity_model]})
+            # Construct a dict representation of a InstancePrototypeInstanceByImage
+            instance_prototype_model = dict(
+                {"keys": [key_identity_model, key_identity_shared]}
+            )
 
             instance_prototype_model["name"] = node_name.lower()
             instance_prototype_model["profile"] = instance_profile_identity_model
@@ -378,9 +380,9 @@ class SoftlayerVPC:
             self.wait_until_vm_state_running(instance_id)
             self.node = self.service.get_instance(instance_id).get_result()
 
-            dnssvc = get_dns_service(access_key)
+            dnssvc = get_dns_service()
             dns_zone = dnssvc.list_dnszones("a55534f5-678d-452d-8cc6-e780941d8e31")
-            dns_zone_id = self.get_id_by_name_zones(zone_name, dns_zone.get_result())
+            dns_zone_id = get_dns_zone_id(zone_name, dns_zone.get_result())  # noqa
 
             resource = dnssvc.list_resource_records(
                 instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
@@ -403,6 +405,7 @@ class SoftlayerVPC:
                     name=self.node["name"],
                     rdata=records_ip[0]["rdata"],
                 )
+
             dnssvc.create_resource_record(
                 instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
                 dnszone_id=dns_zone_id,

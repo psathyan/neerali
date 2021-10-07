@@ -80,7 +80,7 @@
 #   endpoint: <compute-endpoint>
 #   credentials:
 #     username: <username>
-#     api_key: <IBM Cloud service/user account API key>
+#     api-key: <IBM Cloud service/user account API key>
 
 
 # =========================
