@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Support VM lifecycle operation in an OpenStack Cloud."""
-import logging
 import socket
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -19,9 +18,10 @@ from libcloud.compute.types import Provider
 
 from compute import CephVMNode
 from utils.config import CephCIConfig
+from utils.log import Log
 from utils.utils import yaml_to_dict
 
-LOG = logging.getLogger()
+LOG = Log()
 CONF = CephCIConfig()
 
 # libcloud does not have a timeout enabled for Openstack calls to
@@ -146,7 +146,7 @@ class OpenStack(CephVMNode):
             size_of_disks: The storage capacity of the volumes
             no_of_volumes: The number of volumes to be attached.
         """
-        LOG.info("Starting to create VM with name %s", node_name)
+        LOG.info(f"Starting to create VM with name {node_name}")
         spec = yaml_to_dict(CONF["compute"]["spec"])
         image_name = spec["instance"]["create"]["image-name"]
         vm_size = spec["instance"]["create"]["vm-size"]
@@ -196,7 +196,7 @@ class OpenStack(CephVMNode):
         if self.node.state == "pending":
             raise NodeDeleteFailure(f"{self.node.name} cannot be deleted.")
 
-        logging.info("Removing the instance with name %s", self.node.name)
+        LOG.info(f"Removing the instance with name {self.node.name}")
         for ip in self.floating_ips:
             self.driver.ex_detach_floating_ip_from_node(self.node, ip)
 
@@ -204,6 +204,9 @@ class OpenStack(CephVMNode):
         for vol in self.volumes:
             self.driver.detach_volume(volume=vol)
             self.driver.destroy_volume(volume=vol)
+
+        # Volumes at times take a longer time to delete
+        sleep(30)
 
         self.driver.destroy_node(self.node)
         self.node = None
@@ -419,9 +422,7 @@ class OpenStack(CephVMNode):
                 end_time = datetime.now()
                 duration = (end_time - start_time).total_seconds()
                 LOG.info(
-                    "%s moved to running state in %d seconds.",
-                    self.node.name,
-                    int(duration),
+                    f"{self.node.name} moved to running state in {duration} seconds."
                 )
                 return
 
@@ -448,10 +449,8 @@ class OpenStack(CephVMNode):
             size_of_disk:   The storage capacity of the volume in GiB.
         """
         LOG.info(
-            "Creating %d volumes with %sGiB storage for %s",
-            no_of_volumes,
-            size_of_disk,
-            self.node.name,
+            f"Creating {no_of_volumes} volumes with {size_of_disk}GiB storage for "
+            f"{self.node.name}"
         )
         volumes = list()
 
@@ -498,7 +497,7 @@ class OpenStack(CephVMNode):
                 return True
 
             if "error" in volume.state.lower():
-                LOG.error("%s state is %s", volume.name, volume.state)
+                LOG.error(f"{volume.name} state is {volume.state}")
                 break
 
             if tries > 10:
