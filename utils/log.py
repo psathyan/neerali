@@ -185,6 +185,7 @@ class Log(metaclass=Singleton):
             "debug": self._logger.debug,
             "warning": self._logger.warning,
             "error": self._logger.error,
+            "exception": self._logger.exception
         }
         extra = None
         if self._config.get("logstash"):
@@ -245,3 +246,14 @@ class Log(metaclass=Singleton):
             None
         """
         self._log("error", message, metadata)
+
+    def exception(self, message: Any) -> None:
+        """
+        Log the given message under exception log level.
+
+        Args:
+            message (Any):  Message or record to be emitted.
+        Returns:
+            None
+        """
+        self._log("exception", message)
