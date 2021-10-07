@@ -168,7 +168,9 @@ class Log(metaclass=Singleton):
                 handler.close()
                 self._logger.removeHandler(handler)
 
-    def _log(self, level: str, message: Any, metadata: Optional[Dict] = None) -> None:
+    def _log(
+        self, level: str, message: Any, metadata: Optional[Dict] = None, **kwargs
+    ) -> None:
         """
         Log the given message using the provided level along with the metadata.
 
@@ -185,7 +187,7 @@ class Log(metaclass=Singleton):
             "debug": self._logger.debug,
             "warning": self._logger.warning,
             "error": self._logger.error,
-            "exception": self._logger.exception
+            "exception": self._logger.exception,
         }
         extra = None
         if self._config.get("logstash"):
@@ -193,7 +195,7 @@ class Log(metaclass=Singleton):
             if metadata:
                 extra.update(metadata)
 
-        log[level](message, extra=extra)
+        log[level](message, extra=extra, **kwargs)
 
     def info(self, message: Any, metadata: Optional[Dict] = None) -> None:
         """
@@ -208,52 +210,53 @@ class Log(metaclass=Singleton):
         """
         self._log("info", message, metadata)
 
-    def debug(self, message: Any, metadata: Optional[Dict] = None) -> None:
+    def debug(self, message: Any, metadata: Optional[Dict] = None, **kwargs) -> None:
         """
         Log with debug level the provided message and extra data.
 
         Args:
             message (str):      The message to be logged.
             metadata (dict):    The metadata that would be sent along with the message.
-
+            kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
-        self._log("debug", message, metadata)
+        self._log("debug", message, metadata, **kwargs)
 
-    def warning(self, message: Any, metadata: Optional[Dict] = None) -> None:
+    def warning(self, message: Any, metadata: Optional[Dict] = None, **kwargs) -> None:
         """
         Log with warning level the provided message and extra data.
 
         Args:
             message (Any):      The message to be logged.
             metadata (dict):    The metadata that would be sent along with the message.
-
+            kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
-        self._log("warning", message, metadata)
+        self._log("warning", message, metadata, **kwargs)
 
-    def error(self, message: Any, metadata: Optional[Dict] = None) -> None:
+    def error(self, message: Any, metadata: Optional[Dict] = None, **kwargs) -> None:
         """
         Log with error level the provided message and extra data.
 
         Args:
             message (Any):      The message to be logged.
             metadata (dict):    The metadata that would be sent along with the message.
-
+            kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
-        self._log("error", message, metadata)
+        self._log("error", message, metadata, **kwargs)
 
-    def exception(self, message: Any) -> None:
+    def exception(self, message: Any, **kwargs) -> None:
         """
         Log the given message under exception log level.
 
         Args:
             message (Any):  Message or record to be emitted.
+            kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
-        self._log("exception", message)
+        self._log("exception", message, **kwargs)
