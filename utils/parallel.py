@@ -22,7 +22,7 @@ def capture_traceback(func, *args, **kwargs):
     """
     try:
         return func(*args, **kwargs)
-    except Exception:   # noqa
+    except Exception:  # noqa
         return ExceptionHolder(sys.exc_info())
 
 
