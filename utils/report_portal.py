@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Provides methods for logging to a given report portal instance."""
-import traceback
 from pathlib import Path
 from time import time
 
-from reportportal_client import ReportPortalServiceAsync
+from reportportal_client import ReportPortalService
 
 from models.testdetails import TestCaseMeta
 
@@ -19,28 +18,22 @@ def timestamp() -> str:
     return str(int(time() * 1000))
 
 
-def error_handler(exc_info) -> None:
-    """Error handler for Report Portal."""
-    print(f"ERROR: {exc_info[1]}")
-    traceback.print_exception(*exc_info)
-
-
 class RPLogger:
     """Report Portal logger object."""
 
     def __init__(self) -> None:
         """Initializes the object using CephCI global conf file."""
         self.conf = CephCIConfig()
+        self.test_id = None
 
         if not self.conf.get("report-portal"):
             self.client = None
             return
 
-        self.client = ReportPortalServiceAsync(
+        self.client = ReportPortalService(
             endpoint=self.conf["report-portal"]["endpoint"],
             project=self.conf["report-portal"]["project"],
             token=self.conf["report-portal"]["token"],
-            error_handler=error_handler,
         )
 
     def start_launch(self, suite_name: str) -> None:
@@ -93,7 +86,7 @@ class RPLogger:
             None
         """
         params = testcase.extra
-        self.client.start_test_item(
+        self.test_id = self.client.start_test_item(
             name=name,
             description=testcase.description,
             start_time=timestamp(),
@@ -105,4 +98,6 @@ class RPLogger:
         """Stop the test step logging with the provided status."""
         status = testcase.status
         issues = testcase.extra.get("issues")
-        self.client.finish_test_item(end_time=timestamp(), status=status, issue=issues)
+        self.client.finish_test_item(
+            item_id=self.test_id, end_time=timestamp(), status=status, issue=issues
+        )
