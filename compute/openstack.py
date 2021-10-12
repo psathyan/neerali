@@ -7,22 +7,18 @@ from time import sleep
 from typing import List, Optional, Union
 from uuid import UUID
 
-from libcloud.compute.base import Node, NodeDriver, NodeImage, NodeSize
-from libcloud.compute.drivers.openstack import (
-    OpenStack_2_NodeDriver,
-    OpenStackNetwork,
-    StorageVolume,
-)
-from libcloud.compute.providers import get_driver
-from libcloud.compute.types import Provider
+from libcloud.compute.base import Node, NodeDriver, NodeImage, NodeSize  # noqa
+from libcloud.compute.drivers.openstack import OpenStack_2_NodeDriver  # noqa
+from libcloud.compute.drivers.openstack import OpenStackNetwork  # noqa
+from libcloud.compute.drivers.openstack import StorageVolume  # noqa; noqa
+from libcloud.compute.providers import get_driver  # noqa
+from libcloud.compute.types import Provider  # noqa
 
-from compute import CephVMNode
-from utils.config import CephCIConfig
-from utils.log import Log
+import utils.config
+import utils.log
 from utils.utils import yaml_to_dict
 
-LOG = Log()
-CONF = CephCIConfig()
+LOG = utils.log.Log()
 
 # libcloud does not have a timeout enabled for Openstack calls to
 # ``create_node``, and it uses the default timeout value from socket which is
@@ -34,41 +30,28 @@ socket.setdefaulttimeout(280)
 
 
 def get_openstack_driver(
-    username: str,
-    password: str,
-    auth_url: str,
-    auth_version: str,
-    tenant_name: str,
-    tenant_domain_id: str,
-    service_region: str,
-    domain_name: str,
     api_version: Optional[str] = "2.2",
 ) -> Union[NodeDriver, OpenStack_2_NodeDriver]:
     """
     Return the client that can interact with the OpenStack cloud.
 
     Args:
-        username:           The name of the user to be set for the session.
-        password:           The password of the provided user.
-        auth_url:           The endpoint that can authenticate the user.
-        auth_version:       The API version to be used for authentication.
-        tenant_name:        The name of the user's project.
-        tenant_domain_id:   The ID of the user's project.
-        service_region:     The realm to be used.
-        domain_name:        The authentication domain to be used.
         api_version:        The API Version to be used for communication.
     """
+    conf = utils.config.CephCIConfig()
     openstack = get_driver(Provider.OPENSTACK)
+    cred = conf["compute"]["credential"]
+
     return openstack(
-        username,
-        password,
+        cred["username"],
+        cred["password"],
         api_version=api_version,
-        ex_force_auth_url=auth_url,
-        ex_force_auth_version=auth_version,
-        ex_tenant_name=tenant_name,
-        ex_force_service_region=service_region,
-        ex_domain_name=domain_name,
-        ex_tenant_domain_id=tenant_domain_id,
+        ex_force_auth_url=cred["auth-url"],
+        ex_force_auth_version=cred["auth-version"],
+        ex_tenant_name=cred["tenant-name"],
+        ex_force_service_region=cred["service-region"],
+        ex_domain_name=cred["domain"],
+        ex_tenant_domain_id=cred["tenant-domain-id"],
     )
 
 
@@ -97,27 +80,20 @@ class NodeDeleteFailure(Exception):
     pass
 
 
-class OpenStack(CephVMNode):
+class OpenStack:
     """Represent the VMNode required for CephCI."""
 
-    def __init__(self, node_name: Optional[str] = None) -> None:
+    def __init__(
+        self, node_name: Optional[str] = None, node: Optional[Node] = None
+    ) -> None:
         """
         Initialize the instance using the provided information.
 
         Args:
             node_name (str):    The name of the node to be retrieved.
+            node (Node):        Instantiate using the given Node.
         """
-        cred = CONF["compute"]["credentials"]
-        self.driver = get_openstack_driver(
-            username=cred["username"],
-            password=cred["password"],
-            auth_url=cred["auth-url"],
-            auth_version=cred["auth-version"],
-            tenant_name=cred["tenant-name"],
-            tenant_domain_id=cred["tenant-domain-id"],
-            service_region=cred["service-region"],
-            domain_name=cred["domain"],
-        )
+        self.driver = get_openstack_driver()
         self.node: Optional[Node] = None
 
         # CephVM attributes
@@ -129,7 +105,9 @@ class OpenStack(CephVMNode):
         self.osd_scenario: int
         self.keypair: Optional[str] = None
 
-        if node_name:
+        if node:
+            self.node = node
+        elif node_name:
             self.node = self._get_node(name=node_name)
 
     def create(
@@ -147,7 +125,8 @@ class OpenStack(CephVMNode):
             no_of_volumes: The number of volumes to be attached.
         """
         LOG.info(f"Starting to create VM with name {node_name}")
-        spec = yaml_to_dict(CONF["compute"]["spec"])
+        conf = utils.config.CephCIConfig()
+        spec = yaml_to_dict(conf["compute"]["spec"])
         image_name = spec["instance"]["create"]["image-name"]
         vm_size = spec["instance"]["create"]["vm-size"]
         vm_network = spec["instance"]["create"].get("vm-network")
@@ -203,10 +182,9 @@ class OpenStack(CephVMNode):
         # At this point self.node is stale
         for vol in self.volumes:
             self.driver.detach_volume(volume=vol)
+            # Volume detachment can take time.
+            sleep(5)
             self.driver.destroy_volume(volume=vol)
-
-        # Volumes at times take a longer time to delete
-        sleep(30)
 
         self.driver.destroy_node(self.node)
         self.node = None

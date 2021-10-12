@@ -61,6 +61,7 @@
 
 # OpenStack
 # compute:
+#   prefix: <instances-name>
 #   type: openstack
 #   spec: <configuration-file-to-be-used>       # example rhel-8-4-x86_64.yaml
 #   credential:

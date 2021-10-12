@@ -5,6 +5,7 @@ import sys
 
 from docopt import docopt
 
+from utils.compute import delete_vms
 from utils.config import CephCIConfig
 from utils.log import LOG_FORMAT, Log
 from utils.utils import generate_unique_id, merge_dicts, yaml_to_dict
@@ -36,7 +37,7 @@ Options:
 """
 LOG = logging.getLogger(__name__)
 logging.basicConfig(
-    handlers=[logging.StreamHandler(sys.stdout)], level=logging.DEBUG, format=LOG_FORMAT
+    handlers=[logging.StreamHandler(sys.stdout)], level=logging.INFO, format=LOG_FORMAT
 )
 
 
@@ -57,9 +58,11 @@ def run(conf: CephCIConfig) -> None:
         Exception
     """
     # Always check if the operation is cleanup first before proceeding with workflow
-    # cleanup_nodes(conf)
     if conf.get("cleanup"):
+        delete_vms(conf["cleanup"])
         return
+
+    delete_vms()
 
     LOG.info("Successfully completed the execution")
 
@@ -109,13 +112,15 @@ if __name__ == "__main__":
         """
         print(msg)
 
+        # Perform the log initializers
         LOG = Log()
+        LOG.create_root_folder()
         LOG.add_file_handler("startup.log")
 
         run(cephci_conf)
 
     except BaseException as be:  # no-qa
-        LOG.error(be)
+        LOG.exception(be)
         sys.exit(1)
     finally:
         LOG.close()

@@ -38,51 +38,42 @@ class Log(metaclass=Singleton):
 
     def __init__(self) -> None:
         """
-        Initializes the logging mechanism based on the inputs provided.
-
-        Console and file logging is enabled. If logstash server information is provided,
-        a handler is also added.
-
-        From CephCIConf, the following fields are parsed.
-
-            run_id:   Unique execution identifier
-            log:  Global configuration of the execution. Parses the dict for
-                path:
-                verbose:
-            logstash:
-                host:
-                port:
-                version:
-        Returns:
-            None
-        """
-        self._config = deepcopy(CephCIConfig())
-        self._run_id = self._config["run_id"]
+        Initializes the logging mechanism based on the inputs provided."""
         self._logger = logging.getLogger()
+        self._log_level = logging.INFO
+        self._log_dir = None
 
-        self.log_level = logging.INFO
         self.log_format = LOG_FORMAT
 
-        if self._config.get("log", {}).get("verbose"):
-            self.log_level = logging.DEBUG
+    @property
+    def log_dir(self) -> str:
+        """Return the absolute path to the logging folder."""
+        return self._log_dir
 
-        logging.basicConfig(
-            handlers=[logging.StreamHandler(sys.stdout)],
-            level=self.log_level,
-            format=self.log_format,
-        )
+    @property
+    def log_level(self) -> int:
+        """Return the logging level."""
+        return self._log_level
 
-        self.log_dir = self.create_root_folder()
+    @property
+    def config(self) -> Dict:
+        """Return the CephCI run configuration."""
+        return CephCIConfig()
 
-        if self._config.get("logstash"):
-            self._add_logstash_handler()
+    @property
+    def run_id(self) -> str:
+        """Return the unique identifier of the execution run."""
+        return self.config["run_id"]
 
-        self.metadata = dict(
+    @property
+    def metadata(self) -> Dict:
+        """Return the metadata of the execution run."""
+        return dict(
             {
-                "test_run_id": self._run_id,
+                "test_run_id": self.run_id,
                 "testing_tool": "cephci",
-                "rhcs": self._config["rhcs"],
-                "test_build": self._config.get("build", "released"),
+                "rhcs": self.config.get("rhcs"),
+                "test_build": self.config.get("build", "released"),
             }
         )
 
@@ -95,9 +86,9 @@ class Log(metaclass=Singleton):
 
     def _add_logstash_handler(self) -> None:
         """Add Logstash handler."""
-        host = self._config["logstash"]["host"]
-        port = self._config["logstash"]["port"]
-        version = self._config["logstash"].get("version", 1)
+        host = self.config["logstash"]["host"]
+        port = self.config["logstash"]["port"]
+        version = self.config["logstash"].get("version", 1)
         handler = logstash.TCPLogstashHandler(
             host=host,
             port=port,
@@ -109,29 +100,38 @@ class Log(metaclass=Singleton):
         server = f"tcp://{host}:{port}"
         self._logger.debug(f"Log events are also pushed to {server}")
 
-    def create_root_folder(self) -> str:
+    def create_root_folder(self) -> None:
         """
         Create the logging folder based on the configuration provided by the user.
 
         Returns:
-            str - path to the root folder.
+            None
 
         Raises:
             LoggerInitializationException.
         """
+        if self.config.get("log", {}).get("verbose"):
+            self._logger.setLevel(logging.DEBUG)
+            self._log_level = logging.DEBUG
+
         root_log_dir = Path("/ceph/cephci-jenkins")
 
         if not root_log_dir.exists():
-            if self._config.get("log", {}).get("path"):
-                root_log_dir = Path(self._config["log"]["path"])
+            if self.config.get("log", {}).get("path"):
+                root_log_dir = Path(self.config["log"]["path"])
             else:
                 root_log_dir = Path("/tmp")
 
         try:
-            log_dir = Path(f"{root_log_dir}/cephci-run-{self._run_id}")
+            log_dir = Path(f"{root_log_dir}/cephci-run-{self.run_id}")
             log_dir.mkdir(exist_ok=True)
 
-            return str(log_dir)
+            self._log_dir = str(log_dir)
+
+            if self.config.get("logstash"):
+                self._add_logstash_handler()
+
+            return
         except FileExistsError:
             self._logger.error("Unable to create log directory.")
 
@@ -190,7 +190,7 @@ class Log(metaclass=Singleton):
             "exception": self._logger.exception,
         }
         extra = None
-        if self._config.get("logstash"):
+        if self.config.get("logstash"):
             extra = deepcopy(self.metadata)
             if metadata:
                 extra.update(metadata)
@@ -236,27 +236,37 @@ class Log(metaclass=Singleton):
         """
         self._log("warning", message, metadata, **kwargs)
 
-    def error(self, message: Any, metadata: Optional[Dict] = None, **kwargs) -> None:
+    def error(
+            self,
+            message: Any,
+            metadata: Optional[Dict] = None,
+            exc_info: bool = True,
+            **kwargs
+    ) -> None:
         """
         Log with error level the provided message and extra data.
 
         Args:
             message (Any):      The message to be logged.
             metadata (dict):    The metadata that would be sent along with the message.
+            exc_info (boo):     Exception details to be logged.
             kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
+        kwargs["exc_info"] = exc_info
         self._log("error", message, metadata, **kwargs)
 
-    def exception(self, message: Any, **kwargs) -> None:
+    def exception(self, message: Any, exc_info: bool = True, **kwargs) -> None:
         """
         Log the given message under exception log level.
 
         Args:
             message (Any):  Message or record to be emitted.
+            exc_info (boo):     Exception details to be logged.
             kwargs (Any):       Support keyword arguments by logging
         Returns:
             None
         """
+        kwargs["exc_info"] = exc_info
         self._log("exception", message, **kwargs)

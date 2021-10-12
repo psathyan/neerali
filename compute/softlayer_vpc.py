@@ -7,26 +7,29 @@ from time import sleep
 from typing import Dict, List
 
 from ibm_cloud_networking_services import DnsSvcsV1
+from ibm_cloud_networking_services.dns_svcs_v1 import (
+    ResourceRecordInputRdataRdataARecord,
+    ResourceRecordInputRdataRdataPtrRecord,
+)
 from ibm_cloud_sdk_core.api_exception import ApiException
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_vpc import VpcV1  # noqa
 
-from compute import CephVMNode
 from utils.config import CephCIConfig
 from utils.log import Log
 from utils.parallel import parallel
 
 LOG = Log()
-CONF = CephCIConfig()
 
 
 def get_ibm_service() -> VpcV1:
     """Return the authenticated VPC client."""
-    access_key = CONF["compute"]["credential"]["api-key"]
+    conf = CephCIConfig()
+    access_key = conf["compute"]["credential"]["api-key"]
     authenticator = IAMAuthenticator(access_key)
     service = VpcV1(authenticator=authenticator)
 
-    endpoint = CONF["compute"]["endpoint"]
+    endpoint = conf["compute"]["endpoint"]
     service.set_service_url(endpoint)
 
     return service
@@ -34,7 +37,8 @@ def get_ibm_service() -> VpcV1:
 
 def get_dns_service() -> DnsSvcsV1:
     """Return the authenticated DNS API client."""
-    access_key = CONF["compute"]["credential"]["api-key"]
+    conf = CephCIConfig()
+    access_key = conf["compute"]["credential"]["api-key"]
     authenticator = IAMAuthenticator(access_key)
     dnssvc = DnsSvcsV1(authenticator=authenticator)
     dnssvc.set_service_url("https://api.dns-svcs.cloud.ibm.com/v1")
@@ -88,7 +92,7 @@ def remove_dns_records(name: str, zone_name: str) -> None:
         )
         records_a = [
             i
-            for i in resource.get_result()["resource_records"]
+            for i in resource.get_result().json()["resource_records"]
             if i["type"] == "A" and name in i["name"]
         ]
         for record in records_a:
@@ -134,7 +138,7 @@ class NodeDeleteFailure(Exception):
     pass
 
 
-class SoftlayerVPC(CephVMNode):
+class SoftlayerVPC:
     """Represent the VMNode required for cephci."""
 
     def __init__(self) -> None:
@@ -389,7 +393,9 @@ class SoftlayerVPC(CephVMNode):
                 dnszone_id=dns_zone_id,
             )
             records_a = [
-                i for i in resource.get_result()["resource_records"] if i["type"] == "A"
+                i
+                for i in resource.get_result().json()["resource_records"]
+                if i["type"] == "A"
             ]
             records_ip = [
                 i
@@ -406,24 +412,28 @@ class SoftlayerVPC(CephVMNode):
                     rdata=records_ip[0]["rdata"],
                 )
 
+            a_record = ResourceRecordInputRdataRdataARecord(
+                self.node["primary_network_interface"]["primary_ipv4_address"]
+            )
             dnssvc.create_resource_record(
                 instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
                 dnszone_id=dns_zone_id,
                 type="A",
                 ttl=900,
                 name=self.node["name"],
-                rdata={
-                    "ip": self.node["primary_network_interface"]["primary_ipv4_address"]
-                },
+                rdata=a_record,
             )
 
+            ptr_record = ResourceRecordInputRdataRdataPtrRecord(
+                f"{self.node['name']}.{zone_name}"
+            )
             dnssvc.create_resource_record(
                 instance_id="a55534f5-678d-452d-8cc6-e780941d8e31",
                 dnszone_id=dns_zone_id,
                 type="PTR",
                 ttl=900,
                 name=self.node["primary_network_interface"]["primary_ipv4_address"],
-                rdata={"ptrdname": f"{self.node['name']}.{zone_name}"},
+                rdata=ptr_record,
             )
 
         except (ResourceNotFound, NetworkOpFailure, NodeError, VolumeOpFailure):

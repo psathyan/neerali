@@ -23,8 +23,8 @@ class RPLogger:
 
     def __init__(self) -> None:
         """Initializes the object using CephCI global conf file."""
-        self.conf = CephCIConfig()
         self.test_id = None
+        self.conf = CephCIConfig()
 
         if not self.conf.get("report-portal"):
             self.client = None
