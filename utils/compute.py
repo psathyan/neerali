@@ -15,6 +15,71 @@ from .parallel import parallel
 LOG = Log()
 
 
+def list_servers(name: Optional[str] = None) -> List:
+    """
+    Returns a collection of server objects matching the given name or full list.
+
+    The argument can be a pattern or string to be used for filtering the list of servers
+    from the specified project in the configuration file.
+
+    Args:
+        name (str):     Name or pattern to be used for retrieving the list of servers.
+
+    Returns:
+
+    """
+    conf = CephCIConfig()
+    if conf.get("compute", {}).get("type") == "openstack":
+        return list_servers_openstack(name)
+
+    if conf.get("compute", {}).get("type") == "softlayer-vpc":
+        return list_servers_softlayer(name)
+
+
+def delete_vms(pattern: Optional[str] = None) -> None:
+    """
+    Remove all the VMs that match the given name or pattern.
+
+    Args:
+        pattern (str):  The name or pattern of the nodes to be removed.
+
+    Returns:
+        None
+    """
+    conf = CephCIConfig()
+    pattern = pattern if pattern else conf.get("compute", {}).get("prefix")
+
+    if not pattern:
+        LOG.warning("Missing compute prefix information. Not removing any VMs")
+        return
+
+    LOG.info(f"Preparing to remove VMs having {pattern}")
+
+    if conf.get("compute", {}).get("type") == "openstack":
+        return delete_openstack_vms(pattern)
+
+    if conf.get("compute", {}).get("type") == "softlayer-vpc":
+        return delete_softlayer_vpc_vms(pattern)
+
+
+def delete_volumes(pattern) -> None:
+    """
+    Remove all the VMs that match the given name or pattern.
+
+    Args:
+        pattern (str):  The name or pattern of the nodes to be removed.
+
+    Returns:
+        None
+    """
+    conf = CephCIConfig()
+
+    LOG.info(f"Preparing to remove volumes having {pattern}")
+
+    if conf.get("compute").get("type") == "openstack":
+        return delete_volumes_openstack(pattern)
+
+
 def list_servers_softlayer(name: Optional[str] = None) -> List:
     """
     Returns a list of server objects matching the given name in IBM Cloud.
@@ -50,27 +115,6 @@ def list_servers_openstack(name: Optional[str] = None) -> List[Node]:
         return [driver.ex_get_node_details(server["id"]) for server in servers]
 
     return driver.list_nodes()
-
-
-def list_servers(name: Optional[str] = None) -> List:
-    """
-    Returns a collection of server objects matching the given name or full list.
-
-    The argument can be a pattern or string to be used for filtering the list of servers
-    from the specified project in the configuration file.
-
-    Args:
-        name (str):     Name or pattern to be used for retrieving the list of servers.
-
-    Returns:
-
-    """
-    conf = CephCIConfig()
-    if conf["compute"]["type"] == "openstack":
-        return list_servers_openstack(name)
-
-    if conf["compute"]["type"] == "softlayer-vpc":
-        return list_servers_softlayer(name)
 
 
 def delete_openstack_vms(pattern: str) -> None:
@@ -124,47 +168,3 @@ def delete_volumes_openstack(pattern: str) -> None:
 
             if pattern in vol.name:
                 p.spawn(delete_volume_openstack, vol)
-
-
-def delete_vms(pattern: Optional[str] = None) -> None:
-    """
-    Remove all the VMs that match the given name or pattern.
-
-    Args:
-        pattern (str):  The name or pattern of the nodes to be removed.
-
-    Returns:
-        None
-    """
-    conf = CephCIConfig()
-    pattern = pattern if pattern else conf.get("compute", {}).get("prefix")
-
-    if not pattern:
-        LOG.warning("Missing compute prefix information. Not removing any VMs")
-        return
-
-    LOG.info(f"Preparing to remove VMs having {pattern}")
-
-    if conf["compute"]["type"] == "openstack":
-        return delete_openstack_vms(pattern)
-
-    if conf["compute"]["type"] == "softlayer-vpc":
-        return delete_softlayer_vpc_vms(pattern)
-
-
-def delete_volumes(pattern) -> None:
-    """
-    Remove all the VMs that match the given name or pattern.
-
-    Args:
-        pattern (str):  The name or pattern of the nodes to be removed.
-
-    Returns:
-        None
-    """
-    conf = CephCIConfig()
-
-    LOG.info(f"Preparing to remove volumes having {pattern}")
-
-    if conf["compute"]["type"] == "openstack":
-        return delete_volumes_openstack(pattern)
