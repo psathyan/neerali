@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Implements frequently used workflows related to compute lifecycle."""
+from time import sleep
 from typing import List, Optional
 
 from libcloud.compute.base import Node  # noqa
+from libcloud.compute.drivers.openstack import StorageVolume  # noqa
 
 from compute.openstack import OpenStack, get_openstack_driver
 
@@ -86,6 +88,44 @@ def delete_softlayer_vpc_vms(pattern: str) -> None:
         pass
 
 
+def delete_volume_openstack(vol: StorageVolume) -> None:
+    """
+    Delete the provided volume.
+
+    Args:
+        vol (StorageVolume):    StorageVolume instance that needs to be removed.
+
+    Returns:
+        None
+    """
+    driver = get_openstack_driver()
+    LOG.info(f"Removing openstack volume {vol.name}")
+
+    driver.detach_volume(vol)
+    sleep(5)
+    driver.destroy_volume(vol)
+
+
+def delete_volumes_openstack(pattern: str) -> None:
+    """
+    Remove the volumes whose names match the given pattern.
+
+    Args:
+        pattern (str):  Name/pattern used for filtering the volume name.
+
+    Returns:
+        None
+    """
+    driver = get_openstack_driver()
+    with parallel() as p:
+        for vol in driver.list_volumes():
+            if not vol.name:
+                continue
+
+            if pattern in vol.name:
+                p.spawn(delete_volume_openstack, vol)
+
+
 def delete_vms(pattern: Optional[str] = None) -> None:
     """
     Remove all the VMs that match the given name or pattern.
@@ -110,3 +150,21 @@ def delete_vms(pattern: Optional[str] = None) -> None:
 
     if conf["compute"]["type"] == "softlayer-vpc":
         return delete_softlayer_vpc_vms(pattern)
+
+
+def delete_volumes(pattern) -> None:
+    """
+    Remove all the VMs that match the given name or pattern.
+
+    Args:
+        pattern (str):  The name or pattern of the nodes to be removed.
+
+    Returns:
+        None
+    """
+    conf = CephCIConfig()
+
+    LOG.info(f"Preparing to remove volumes having {pattern}")
+
+    if conf["compute"]["type"] == "openstack":
+        return delete_volumes_openstack(pattern)

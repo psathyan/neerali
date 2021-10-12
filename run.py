@@ -5,7 +5,7 @@ import sys
 
 from docopt import docopt
 
-from utils.compute import delete_vms
+from utils.compute import delete_vms, delete_volumes
 from utils.config import CephCIConfig
 from utils.log import LOG_FORMAT, Log
 from utils.utils import generate_unique_id, merge_dicts, yaml_to_dict
@@ -60,6 +60,7 @@ def run(conf: CephCIConfig) -> None:
     # Always check if the operation is cleanup first before proceeding with workflow
     if conf.get("cleanup"):
         delete_vms(conf["cleanup"])
+        delete_volumes(conf["cleanup"])
         return
 
     delete_vms()

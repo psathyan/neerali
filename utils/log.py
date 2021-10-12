@@ -16,7 +16,6 @@ Along with the above, it provides support for pushing events to
     - logstash server
 """
 import logging
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -237,11 +236,11 @@ class Log(metaclass=Singleton):
         self._log("warning", message, metadata, **kwargs)
 
     def error(
-            self,
-            message: Any,
-            metadata: Optional[Dict] = None,
-            exc_info: bool = True,
-            **kwargs
+        self,
+        message: Any,
+        metadata: Optional[Dict] = None,
+        exc_info: bool = True,
+        **kwargs,
     ) -> None:
         """
         Log with error level the provided message and extra data.
