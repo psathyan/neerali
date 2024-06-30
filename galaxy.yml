@@ -1,0 +1,26 @@
+---
+namespace: cephci
+name: general
+version: 0.1
+readme: README.md
+
+authors:
+  - psathyan (https://github.com/psathyan)
+
+description: "A framework for continuous testing of Ceph."
+license: []
+license_file: 'LICENSE'
+
+tags:
+  - ci
+  - linux
+  - tools
+
+dependencies:
+  'git+https://github.com/ansible-collections/community.general': 'main'
+  'git+https://github.com/ansible-collections/ansible.posix': 'main'
+  'git+https://github.com/ansible-collections/community.crypto': 'main'
+  'git+https://github.com/ansible-collections/kubernetes.core': 'main'
+  'git+https://github.com/openstack/ansible-collections-openstack': 'master'
+  'git+https://github.com/ansible-collections/ansible.netcommon': 'main'
+  'git+https://github.com/openstack/ansible-config_template': 'master'
