@@ -1,6 +1,7 @@
 *~
 .*.sw[nmop]
 *.pyc
+.ansible
 .tox
 __pycache__
 ven*
