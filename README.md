@@ -2,7 +2,7 @@
 A framework for continuous testing of Ceph.
 
 ## Licenses
-Copyright 2024.
+(c) Copyright 2024, IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
