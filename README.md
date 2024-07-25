@@ -1,4 +1,4 @@
-# CephCI
+# neerali
 A framework for continuous testing of Ceph.
 
 ## Licenses

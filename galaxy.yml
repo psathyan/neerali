@@ -1,5 +1,5 @@
 ---
-namespace: cephci
+namespace: neerali
 name: general
 version: 0.1
 readme: README.md
