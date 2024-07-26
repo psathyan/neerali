@@ -14,6 +14,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+# The purpose of this playbook is to perform tasks related to building Ceph
+# from default or user provided branch. As part of post_tasks, ensure the
+# generated artifacts is in a prescribed format.
+
 - name: Build Ceph playbook
   hosts: "{{ neerali_target_host | default('localhost') }}"
   gather_facts: true
