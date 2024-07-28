@@ -1,7 +1,7 @@
 ---
 # Molecule config
 driver:
-  name: delegated
+  name: default
   options:
     managed: false
     ansible_connection_options:
