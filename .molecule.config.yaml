@@ -1,0 +1,37 @@
+---
+# Molecule config
+driver:
+  name: delegated
+  options:
+    managed: false
+    ansible_connection_options:
+      ansible_connection: local
+
+log: true
+
+platforms:
+  - name: instance
+    environment:
+      http_proxy: "{{ lookup('env', 'http_proxy') }}"
+      https_proxy: "{{ lookup('env', 'https_proxy') }}"
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      fact_caching: jsonfile
+      fact_caching_connection: /tmp/molecule/facts
+      remote_tmp: /tmp
+  log: true
+  env:
+    ANSIBLE_STDOUT_CALLBACK: yaml
+    ANSIBLE_ROLES_PATH: "${ANSIBLE_ROLES_PATH}:${NEERALI_ROLES_PATH}"
+
+scenario:
+  test_sequence:
+    - prepare
+    - converge
+    - cleanup
+
+verifier:
+  name: ansible
