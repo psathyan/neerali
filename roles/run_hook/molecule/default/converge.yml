@@ -22,9 +22,29 @@
   vars_files:
     - resource/vars.yaml
 
+  vars:
+    neerali_basedir: "{{ _tmp }}/neerali-data"
+
   tasks:
     - name: No hook
       vars:
-        step: no_hook
+        step: noop_test
       ansible.builtin.include_role:
         name: run_hook
+
+    - name: Ensure storage fact is not defined
+      ansible.builtin.assert:
+        that:
+          - storage is undefined
+
+    - name: Check run_hook called
+      vars:
+        step: test_molecule
+      ansible.builtin.include_role:
+        name: run_hook
+
+    - name: Ensure storage fact is defined
+      ansible.builtin.assert:
+        that:
+          - storage is defined
+          - storage == "Ceph"

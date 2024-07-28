@@ -30,7 +30,7 @@
         path: "{{ _tmp }}/{{ item }}"
         state: absent
       loop:
-        - neeral_test_env.yaml
+        - neerali_test_env.yaml
         - play_run_hook_test.yaml
         - "{{ neerali_basedir }}"
       loop_control:

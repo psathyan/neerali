@@ -20,11 +20,22 @@
 
   vars:
     ansible_user_dir: "{{ lookup('env', 'HOME') }}"
+    _tmp: "{{ lookup('env', 'TMP') | default('/tmp') }}"
+    neerali_basedir: "neerali-data"
 
   tasks:
+    - name: Ensure data directory
+      ansible.builtin.file:
+        path: "{{ _tmp }}/{{ neerali_basedir }}/artifacts/parameters"
+        state: directory
+        recurse: true
+        mode: "0755"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+
     - name: Create the environment file
       ansible.builtin.copy:
-        dest: "/tmp/neeral_test_env.yaml"
+        dest: "{{ _tmp }}/neerali_test_env.yaml"
         content: |
           actors:
             - Shambu
@@ -35,5 +46,5 @@
 
     - name: Create the playbook
       ansible.builtin.template:
-        dest: "/tmp/play_run_hook_test.yaml"
+        dest: "{{ _tmp }}/play_run_hook_test.yaml"
         src: "templates/play.yaml.j2"

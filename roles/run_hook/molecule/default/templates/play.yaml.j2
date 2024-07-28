@@ -15,11 +15,12 @@
 
     - name: Generate artifacts for caller consumption
       ansible.builtin.copy:
-        dest: "{{ neerali_basedir }}/artifacts/{{ step }}_{{ hook_name}}.yaml"
-        content:|
+        dest: >-
+          {{ neerali_basedir }}/artifacts/{{ step }}_{{ hook_name }}.yaml
+        content: |
+          storage: Ceph
           actors:
             {% for actor in actors %}
             - {{ actor }}
-            {% endfor -%}
+            {% endfor %}
 {% endraw %}
-          storage: Ceph
