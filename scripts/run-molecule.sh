@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xeuo pipefail
+set -euo pipefail
 
 ROLE_DIR="roles/${ROLE_NAME}"
 _config="${MOLECULE_CONFIG:-../../.molecule.config.yaml}"
