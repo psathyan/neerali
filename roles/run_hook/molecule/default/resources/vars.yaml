@@ -1,0 +1,8 @@
+---
+# Hook playbook
+test_hook:
+  - name: Evaluate run_hook role
+    source: /tmp/sample-1.yaml
+    extra_vars:
+      actor: Shikari Shambu
+      file: '/tmp/neerali_test_env.yaml'

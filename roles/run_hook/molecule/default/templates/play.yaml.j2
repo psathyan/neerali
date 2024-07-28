@@ -1,0 +1,25 @@
+---
+# Template for creating plays.
+- name: A sample playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+{% raw %}
+    - name: Checking messaging
+      ansible.builtin.debug:
+        msg: "Hello {{ actor }}"
+
+    - name: Adding more checks
+      ansible.builtin.debug:
+        msg: "{{ actor }}: Hello my friend {{ co_actor }}!!!"
+
+    - name: Generate artifacts for caller consumption
+      ansible.builtin.copy:
+        dest: "{{ neerali_basedir }}/artifacts/{{ step }}_{{ hook_name}}.yaml"
+        content:|
+          actors:
+            {% for actor in actors %}
+            - {{ actor }}
+            {% endfor -%}
+{% endraw %}
+          storage: Ceph

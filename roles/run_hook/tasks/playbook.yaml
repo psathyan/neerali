@@ -1,0 +1,133 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: "Set playbook path for {{ hook.name }}"
+  vars:
+    _hook_name: >-
+      {{
+        hook.name |
+        regex_replace('([^a-zA-Z0-9\-\._])+', '_') |
+        lower |
+        truncate(30, true, '')
+      }}
+    _play: >-
+      {%- if hook.source is not ansible.builtin.abs -%}
+      {{ playbook_dir }}/hooks/playbooks/{{ hook.source }}
+      {%- else -%}
+      {{ hook.source }}
+      {%- endif -%}
+    _bdir: >-
+      {{
+        neerali_basedir | default(ansible_user_dir ~ '/neerali-data')
+      }}
+  ansible.builtin.set_fact:
+    neerali_basedir: "{{ _bdir }}"
+    hook_name: "{{ _hook_name }}"
+    playbook_path: "{{ _play | realpath }}"
+    log_path: >-
+      {{
+        (
+          _bdir, 'logs', step + '_' + _hook_name + '.log'
+        ) | ansible.builtin.path_join
+      }}
+    extra_vars: >-
+      {%- if hook.extra_vars is defined and hook.extra_vars | length > 0 -%}
+      {% for key,value in hook.extra_vars.items() -%}
+      {%- if key == 'file' %}
+      -e "@{{ value }}"
+      {%- else -%}
+      -e "{{ key }}={{ value }}"
+      {%- endif %}
+      {%- endfor %}
+      {%- endif %}
+
+- name: Ensure playbook exists
+  block:
+    - name: Get file stat
+      ansible.builtin.stat:
+        path: "{{ playbook_path }}"
+      register: playbook_stat
+
+    - name: Assert file existence
+      when:
+        - not playbook_stat.stat.exists
+      ansible.builtin.fail:
+        msg: "Playbook {{ playbook_path }} does not exist."
+
+- name: Get parameters
+  ansible.builtin.find:
+    paths: >-
+      {{
+        (neerali_basedir, 'artifacts', 'parameters') |
+        ansible.builtin.path_join
+      }}
+    file_type: file
+    patterns: "*.yaml"
+  register: neerali_run_hooks_parameter_files
+
+- name: "Passing found parameter files as extra_vars"
+  ansible.builtin.set_fact:
+    extra_vars: >-
+      {{ extra_vars }}
+      {% for _file in neerali_run_hooks_parameter_files %}
+      -e "@{{ _file.path }}"
+      {%- endfor %}
+
+- name: Ensure directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    group: "{{ ansible_user_id }}"
+    owner: "{{ ansible_user_id }}"
+    recurse: true
+  loop:
+    - "{{ log_path | dirname }}"
+    - "{{ neerali_basedir }}/artifacts"
+  loop_control:
+    label: "{{ item }}"
+
+- name: "Executing {{ hook.name }}"
+  no_log: "{{ neerali_nolog | default(true) | bool }}"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    export ANSIBLE_CONFIG="{{ hook.config_file | default(ansible_config_file) }}"
+    export ANSIBLE_LOG_PATH="{{ log_path }}"
+    ansible-playbook -i {{ hook.inventory | default(inventory_file)}} \
+        {% if hook.connnection is defined -%}
+        -c {{ hook.connection }} \
+        {% endif -%}
+        {{ extra_vars }} \
+        -e "neerali_basedir={{ neerali_basedir }}" \
+        -e "step={{ step }}" \
+        -e "hook_name={{ hook_name }}" \
+        -e "playbook_dir={{ playbook_path | dirname }}" \
+        {{ playbook_path }}
+
+- name: Load generated artifacts.
+  block:
+    - name: Verify there is a callback
+      ansible.builtin.stat:
+        path: "{{ neerali_basedir }}/artifacts/{{ step }}_{{ hook_name }}.yaml"
+      register: _callback_stat
+
+    - name: Load artifacts
+      when:
+        - _callback_stat.stat.exists
+      ansible.builtin.include_vars:
+        file: >-
+          {{ neerali_basedir }}/artifacts/{{ step }}_{{ hook_name }}.yaml
