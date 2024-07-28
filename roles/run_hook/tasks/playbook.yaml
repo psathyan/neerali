@@ -26,7 +26,7 @@
       }}
     _play: >-
       {%- if hook.source is not ansible.builtin.abs -%}
-      {{ playbook_dir }}/hooks/playbooks/{{ hook.source }}
+      {{ role_path }}/../../hooks/playbooks/{{ hook.source }}
       {%- else -%}
       {{ hook.source }}
       {%- endif -%}
@@ -49,7 +49,7 @@
       {% for key,value in hook.extra_vars.items() -%}
       {%- if key == 'file' %}
       -e "@{{ value }}"
-      {%- else -%}
+      {%- else %}
       -e "{{ key }}={{ value }}"
       {%- endif %}
       {%- endfor %}
@@ -83,17 +83,18 @@
   ansible.builtin.set_fact:
     extra_vars: >-
       {{ extra_vars }}
-      {% for _file in neerali_run_hooks_parameter_files %}
+      {% for _file in neerali_run_hooks_parameter_files.files %}
       -e "@{{ _file.path }}"
       {%- endfor %}
 
 - name: Ensure directory exists
+  become: true
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
-    group: "{{ ansible_user_id }}"
     owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
     recurse: true
   loop:
     - "{{ log_path | dirname }}"
