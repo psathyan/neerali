@@ -104,20 +104,27 @@
 
 - name: "Executing {{ hook.name }}"
   no_log: "{{ neerali_nolog | default(true) | bool }}"
-  ansible.builtin.shell: |
-    set -euo pipefail
-    export ANSIBLE_CONFIG="{{ hook.config_file | default(ansible_config_file) }}"
-    export ANSIBLE_LOG_PATH="{{ log_path }}"
-    ansible-playbook -i {{ hook.inventory | default(inventory_file)}} \
-        {% if hook.connnection is defined -%}
-        -c {{ hook.connection }} \
-        {% endif -%}
-        {{ extra_vars }} \
-        -e "neerali_basedir={{ neerali_basedir }}" \
-        -e "step={{ step }}" \
-        -e "hook_name={{ hook_name }}" \
-        -e "playbook_dir={{ playbook_path | dirname }}" \
-        {{ playbook_path }}
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      export ANSIBLE_CONFIG="{{ hook.config_file | default(ansible_config_file) }}"
+      export ANSIBLE_LOG_PATH="{{ log_path }}"
+      ansible-playbook -i {{ hook.inventory | default(inventory_file)}} \
+          {% if hook.connnection is defined -%}
+          -c {{ hook.connection }} \
+          {% endif -%}
+          {{ extra_vars }} \
+          -e "neerali_basedir={{ neerali_basedir }}" \
+          -e "step={{ step }}" \
+          -e "hook_name={{ hook_name }}" \
+          -e "playbook_dir={{ playbook_path | dirname }}" \
+          {{ playbook_path }}
+    creates: >-
+      {{
+        (
+          log_path, (playbook_path | basename) ~ '.log'
+        ) | ansible.builtin.path_join
+      }}
 
 - name: Load generated artifacts.
   block:
