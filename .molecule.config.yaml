@@ -19,7 +19,7 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      fact_caching: jsonfile
+      fact_caching: yaml
       fact_caching_connection: /tmp/molecule/facts
       remote_tmp: /tmp
   log: true
