@@ -10,7 +10,7 @@ quiet: false
 verbosity: 1
 parseable: true
 offline: true
-var_naming_pattern: "^ci_[a-z_][a-z0-9_]*$"
+var_naming_pattern: "^neerali_[a-z_][a-z0-9_]*$"
 enable_list:
   - fqcn-builtins
   - fqcn[action]
@@ -25,6 +25,6 @@ enable_list:
   - no-same-owner
   - name[play]
 skip_list:
-  - risky-file-permissions  # Seems to fail on 0644 on files ?!
-  - schema[meta]  # Apparently "CentOS 9" isn't known... ?!
+  - risky-file-permissions
+  - schema[meta]
   - galaxy[no-changelog]
