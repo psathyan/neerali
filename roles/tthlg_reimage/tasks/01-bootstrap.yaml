@@ -1,0 +1,57 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Install the required prerequisites
+  become: true
+  ansible.builtin.package:
+    name: "{{ neerali_tthlg_reimage_packages }}"
+
+- name: Ensure workspace exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    recurse: true
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - "{{ neerali_tthlg_reimage_basedir }}"
+    - "{{ neerali_tthlg_reimage_artifactdir }}"
+    - "{{ neerali_tthlg_reimage_logdir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Install teuthology
+  ansible.builtin.pip:
+    name: "{{ neerali_tthlg_reimage_repo }}"
+    virtualenv: "{{ neerali_tthlg_reimage_artifactdir }}/venv"
+    virtualenv_command: "python3 -m venv"
+
+# Don't replace the configuration if contents are found to different.
+# This is to avoid clobbering of existing file that may have more
+# details and managed outside the purview of this run.
+- name: Ensure teuthology configuration file exists.
+  become: true
+  vars:
+    email_address: "{{ neerali_publish_email | default('cephci@redhat.com') }}"
+  ansible.builtin.template:
+    src: "templates/teuthology.yaml.j2"
+    dest: "/etc/teuthology.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+    force: false

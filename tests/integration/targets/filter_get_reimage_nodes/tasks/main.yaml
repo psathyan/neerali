@@ -1,0 +1,118 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Unit tests for get_reimage_nodes - filter.
+
+
+- name: Test one OS type and version
+  vars:
+    payload:
+      - name: node1
+        os:
+          type: rhel
+          version: 9.4
+      - name: node2
+        os:
+          type: rhel
+          version: 9.4
+    _filtered_out: "{{ payload | neerali.general.get_reimage_nodes }}"
+  ansible.builtin.assert:
+    that:
+      - _filtered_out | length == 1
+      - '"--os-type rhel" in _filtered_out[0]'
+      - '"--os-version 9.4" in _filtered_out[0]'
+      - '"node1" in _filtered_out[0]'
+      - '"node2" in _filtered_out[0]'
+
+- name: Test multiple os families and versions
+  vars:
+    payload:
+      - name: node1
+        os:
+          type: rhel
+          version: 9.4
+      - name: node2
+        os:
+          type: rhel
+          version: 9.4
+      - name: node3
+        os:
+          type: win
+          version: 2021
+    _results: "{{ payload | neerali.general.get_reimage_nodes }}"
+  block:
+    - name: Ensure the length is correct
+      ansible.builtin.assert:
+        that:
+          - _results | length == 2
+
+    - name: Verify the second item in the list
+      vars:
+        _result: "{{ _results[0] if '2021' in _results[0] else _results[1] }}"
+      ansible.builtin.assert:
+        that:
+          - "'--os-type win' in _result"
+          - "'node3' in _result"
+          - "'node2' not in _result"
+
+    - name: Ensure integrity of multiple nodes
+      vars:
+        _result: "{{ _results[0] if 'rhel' in _results[0] else _results[1] }}"
+      ansible.builtin.assert:
+        that:
+          - "'--os-version 9.4' in _result"
+          - "'node1' in _result"
+          - "'node2' in _result"
+
+- name: Test multiple versions
+  vars:
+    payload:
+      - name: node1
+        os:
+          type: rhel
+          version: 9.4
+      - name: node2
+        os:
+          type: rhel
+          version: 9.4
+      - name: node3
+        os:
+          type: rhel
+          version: 9.3
+    _results: "{{ payload | neerali.general.get_reimage_nodes }}"
+  block:
+    - name: Ensure the length is correct
+      ansible.builtin.assert:
+        that:
+          - _results | length == 2
+
+    - name: Verify the second item in the list
+      vars:
+        _result: "{{ _results[0] if '9.3' in _results[0] else _results[1] }}"
+      ansible.builtin.assert:
+        that:
+          - "'--os-version 9.3' in _result"
+          - "'node3' in _result"
+          - "'node2' not in _result"
+
+    - name: Ensure integrity of multiple nodes
+      vars:
+        _result: "{{ _results[0] if '9.4' in _results[0] else _results[1] }}"
+      ansible.builtin.assert:
+        that:
+          - "'--os-version 9.4' in _result"
+          - "'node1' in _result"
+          - "'node2' in _result"
