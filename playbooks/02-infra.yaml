@@ -22,3 +22,29 @@
   vars:
     step: pre_infra
   ansible.builtin.import_playbook: hook.yaml
+
+- name: Provision or reimage the systems
+  hosts: "{{ neerali_target_host | default('localhost') }}"
+  tasks:
+
+    - name: Load parameters files
+      block:
+        - name: Gather information about parameter directory
+          ansible.builtin.stat:
+            path: "{{ neerali_basedir }}/artifacts/parameters"
+          register: _params_dir
+
+        - name: Load the parameters
+          when:
+            - _params_dir.stat.exists
+            - _params_dir.stat.isdir
+          ansible.builtin.include_vars:
+            dir: "{{ neerali_basedir }}/artifacts/parameters"
+
+    - name: Reimage systems using teuthology
+      when:
+        - neerali_use_tthlg_reimage is defined
+        - neerali_use_tthlg_reimage | bool
+        - neerali_systems_layout is defined
+      ansible.builtin.include_role:
+        name: tthlg_reimage
