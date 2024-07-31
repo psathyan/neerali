@@ -18,9 +18,11 @@
 - name: Prepare environment for reimaging test systems.
   ansible.builtin.include_tasks: 01-bootstrap.yaml
 
-- name: Map the data for reimage.
+- name: Reimage the nodes
   vars:
-    _nodes_data: >-
-      {% set _node_map = {} -%}
-      {% for _node in (neerali_system_layout.baremetal | default([])) -%}
-      {%   set _data = {_node.os.type: _node.os.version: [_node.name]} %}
+    _cmd: "{{ neerali_tthlg_reimage_artifactdir }}/venv/bin/teuthology-reimage"
+  ansible.builtin.command:
+    cmd: "{{ _cmd item }}"
+  loop: "{{ _neerali_tthlg_reimage_nodes }}"
+  loop_control:
+    label: "{{ item }}"

@@ -55,3 +55,10 @@
     group: root
     mode: "0644"
     force: false
+
+- name: Gather the list of nodes to be reimaged
+  ansible.builtin.set_fact:
+    _neerali_tthlg_reimage_nodes: >- 
+      {{
+        neeral_systems_layout.baremetal | neerali.general.get_reimage_nodes
+      }}
