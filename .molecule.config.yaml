@@ -22,10 +22,14 @@ provisioner:
       fact_caching: yaml
       fact_caching_connection: /tmp/molecule/facts
       remote_tmp: /tmp
+      local_tmp: /tmp
   log: true
   env:
     ANSIBLE_STDOUT_CALLBACK: yaml
-    ANSIBLE_ROLES_PATH: "${ANSIBLE_ROLES_PATH}:${NEERALI_ROLES_PATH}"
+    ANSIBLE_ROLES_PATH: "${NEERALI_ROLES_PATH:-~/.ansible/roles}"
+    ANSIBLE_LIBRARY: "${NEERALI_LIBRARY:-/usr/share/ansible/plugins/modules}"
+    ANSIBLE_FILTER_PLUGINS: "${NEERALI_FILTER_PLUGINS:-/usr/share/ansible/plugins/filter}"
+    ANSIBLE_ACTION_PLUGINS: "${NEERALI_ACTION_PLUGINS:-/usr/share/ansible/plugins/action}"
 
 scenario:
   test_sequence:
