@@ -14,21 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# All variables intended for modification should be placed in this file.
-# All variables within this role should have a prefix of
-# "neerali_tthlg_reimage"
+# Entry point to role
 
+- name: Converge
+  hosts: all
 
-neerali_tthlg_reimage_basedir: >-
-  {{
-    neerali_basedir | default(ansible_user_dir ~ '/neerali-data')
-  }}
-neerali_tthlg_reimage_artifactdir: >-
-  {{
-    neerali_tthlg_reimage_basedir ~ '/artifacts/tthlg_reimage'
-  }}
-neerali_tthlg_reimage_logdir: >-
-  {{
-    neerali_tthlg_reimage_basedir ~ '/logs/tthlg_reimage'
-  }}
-neerali_tthlg_reimage_repo: "git+https://github.com/ceph/teuthology"
+  roles:
+    - role: "teuthology"
+
+  tasks:
+    - name: Testing entry
+      ansible.builtin.debug:
+        msg: "This file can be used as a test suite"

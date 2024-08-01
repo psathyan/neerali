@@ -15,11 +15,6 @@
 # under the License.
 
 
-- name: Install the required prerequisites
-  become: true
-  ansible.builtin.package:
-    name: "{{ neerali_tthlg_reimage_packages }}"
-
 - name: Ensure workspace exists
   ansible.builtin.file:
     path: "{{ item }}"
@@ -29,17 +24,16 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   loop:
-    - "{{ neerali_tthlg_reimage_basedir }}"
-    - "{{ neerali_tthlg_reimage_artifactdir }}"
-    - "{{ neerali_tthlg_reimage_logdir }}"
+    - "{{ neerali_teuthology_basedir }}"
+    - "{{ neerali_teuthology_artifactdir }}"
+    - "{{ neerali_teuthology_logdir }}"
   loop_control:
     label: "{{ item }}"
 
-- name: Install teuthology
-  ansible.builtin.pip:
-    name: "{{ neerali_tthlg_reimage_repo }}"
-    virtualenv: "{{ neerali_tthlg_reimage_artifactdir }}/venv"
-    virtualenv_command: "python3 -m venv"
+- name: Install the required prerequisites
+  become: true
+  ansible.builtin.package:
+    name: "{{ neerali_teuthology_packages }}"
 
 # Don't replace the configuration if contents are found to different.
 # This is to avoid clobbering of existing file that may have more
@@ -56,9 +50,16 @@
     mode: "0644"
     force: false
 
-- name: Gather the list of nodes to be reimaged
-  ansible.builtin.set_fact:
-    _neerali_tthlg_reimage_nodes: >- 
-      {{
-        neeral_systems_layout.baremetal | neerali.general.get_reimage_nodes
-      }}
+- name: Install teuthology
+  ansible.builtin.pip:
+    name: "{{ neerali_teuthology_repo }}"
+    virtualenv: "{{ neerali_teuthology_artifactdir }}/venv"
+    virtualenv_command: "python3 -m venv"
+
+- name: Reimage nodes
+  when:
+    - neerali_systems_layout is defined
+    - neerali_systems_layout.baremetal is defined
+    - neerali_teuthology_reimage | bool
+  ansible.builtin.include_tasks: reimage.yaml
+  

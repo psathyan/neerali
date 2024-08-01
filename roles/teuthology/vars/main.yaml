@@ -14,15 +14,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Entry point to role
+# Variables that should not be modified during the course of execution are
+# specified here. They should have a prefix of
+# "neerali_tthlg_reimage"
 
-- name: Converge
-  hosts: all
 
-  roles:
-    - role: "tthlg_reimage"
-
-  tasks:
-    - name: Testing entry
-      ansible.builtin.debug:
-        msg: "This file can be used as a test suite"
+neerali_teuthology_packages:
+  - git-core

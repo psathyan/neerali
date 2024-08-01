@@ -20,8 +20,8 @@
     path: "{{ item }}"
     state: absent
   loop:
-    - "{{ neerali_tthlg_reimage_basedir }}"
-    - "{{ neerali_tthlg_reimage_artifactdir }}"
-    - "{{ neerali_tthlg_reimage_logdir }}"
+    - "{{ neerali_teuthology_basedir }}"
+    - "{{ neerali_teuthology_artifactdir }}"
+    - "{{ neerali_teuthology_logdir }}"
   loop_control:
     label: "{{ item }}"

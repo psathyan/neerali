@@ -21,7 +21,7 @@
 
   vars:
     ansible_user_dir: "{{ lookup('env', 'HOME') }}"
-    _tmp: "{{ lookup('env', 'TMP') | default('/tmp') }}"
+    _tmp: "{{ lookup('env', 'ANSIBLE_LOCAL_TMP') | default('/tmp') }}"
     neerali_basedir: "neerali-data"
 
   tasks:

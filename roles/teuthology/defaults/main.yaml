@@ -14,10 +14,22 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Variables that should not be modified during the course of execution are
-# specified here. They should have a prefix of
+# All variables intended for modification should be placed in this file.
+# All variables within this role should have a prefix of
 # "neerali_tthlg_reimage"
 
 
-neerali_tthlog_reimage_packages:
-  - git-core
+neerali_teuthology_basedir: >-
+  {{
+    neerali_basedir | default(ansible_user_dir ~ '/neerali-data')
+  }}
+neerali_teuthology_artifactdir: >-
+  {{
+    neerali_teuthology_basedir ~ '/artifacts/teuthology'
+  }}
+neerali_teuthology_logdir: >-
+  {{
+    neerali_teuthology_basedir ~ '/logs/teuthology'
+  }}
+neerali_teuthology_repo: "git+https://github.com/ceph/teuthology"
+neerali_teuthology_reimage: false

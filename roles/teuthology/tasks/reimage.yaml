@@ -14,15 +14,19 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-galaxy_info:
-  author: neerali
-  description: neerali role -- tthlg_reimage
-  company: IBM Corporation
-  license: Apache-2.0
-  min_ansible_version: 2.17
-  namespace: neerali
-  galaxy_tags:
-    - neerali
-    - test
 
-dependencies: []
+- name: Gather the list of nodes to be reimaged
+  ansible.builtin.set_fact:
+    _neerali_teuthology_reimage_nodes: >- 
+      {{
+        neeral_systems_layout.baremetal | neerali.general.get_reimage_nodes
+      }}
+
+- name: Reimage the nodes
+  vars:
+    _cmd: "{{neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
+  ansible.builtin.command:
+    cmd: "{{ _cmd item }}"
+  loop: "{{ _neerali_teuthology_reimage_nodes }}"
+  loop_control:
+    label: "{{ item }}"

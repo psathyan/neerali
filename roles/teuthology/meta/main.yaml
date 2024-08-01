@@ -14,15 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+galaxy_info:
+  author: neerali
+  description: neerali role -- teuthology
+  company: IBM Corporation
+  license: Apache-2.0
+  min_ansible_version: 2.17
+  namespace: neerali
+  galaxy_tags:
+    - neerali
+    - test
 
-- name: Prepare environment for reimaging test systems.
-  ansible.builtin.include_tasks: 01-bootstrap.yaml
-
-- name: Reimage the nodes
-  vars:
-    _cmd: "{{ neerali_tthlg_reimage_artifactdir }}/venv/bin/teuthology-reimage"
-  ansible.builtin.command:
-    cmd: "{{ _cmd item }}"
-  loop: "{{ _neerali_tthlg_reimage_nodes }}"
-  loop_control:
-    label: "{{ item }}"
+dependencies: []

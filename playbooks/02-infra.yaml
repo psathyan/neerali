@@ -43,8 +43,7 @@
 
     - name: Reimage systems using teuthology
       when:
-        - neerali_use_tthlg_reimage is defined
-        - neerali_use_tthlg_reimage | bool
-        - neerali_systems_layout is defined
+        - neerali_use_teuthology is defined
+        - neerali_use_teuthology | bool
       ansible.builtin.include_role:
-        name: tthlg_reimage
+        name: teuthology

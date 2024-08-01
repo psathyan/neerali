@@ -25,7 +25,7 @@ provisioner:
   inventory:
     host_vars:
       instance:
-        _tmp: "/private/tmp"
+        _tmp: "/tmp"
 
         noop_test:
           - name: 01 Default noop hook
