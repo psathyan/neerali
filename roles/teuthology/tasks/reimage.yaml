@@ -27,7 +27,9 @@
     _cmd: "{{neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
     _log_file: "{{ neerali_teuthology_logdir }}/reimage.log"
   ansible.builtin.shell:
-    cmd: "{{ _cmd }} {{ item }} | tee {{ _log_file }}"
+    cmd: |
+      set -o pipefail
+      {{ _cmd }} {{ item }} | tee {{ _log_file }}
     creates: "{{ _log_file }}"
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
   loop_control:
