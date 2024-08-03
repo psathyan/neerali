@@ -9,6 +9,10 @@ _suite=${TEST_SUITE:-'integration'}
 ansible-lint -s
 black --check --diff .
 
+if [ "${_suite}" == "linters" ];
+    exit 0
+fi
+
 # Check and create molecule image
 _image_c=$(podman image ls --format {{.Names}} | grep -c neerali-molecule) || true
 if [ ${_image_c} -eq 0 ]; then
