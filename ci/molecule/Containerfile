@@ -1,0 +1,24 @@
+FROM quay.io/centos/centos:stream9
+
+LABEL framework=neerali
+LABEL app=molecule
+LABEL license='Apache 2.0'
+LABEL version=1.0.0
+LABEL vendor=IBM
+LABEL author=cephqe@ibm.com
+
+USER root
+RUN dnf install -y sudo python3.12 make git-core && \
+    dnf clean all
+
+RUN useradd ciuser
+RUN echo "ciuser    ALL=(ALL)    NOPASSWD:ALL" | tee /etc/sudoers.d/ciuser
+
+USER ciuser
+WORKDIR /home/ciuser
+ADD run-unit-tests.sh run-unit-tests.sh
+RUN /usr/bin/python3.12 -m venv venv && \
+    mkdir -p neerali && \
+    venv/bin/python3 -m pip install --upgrade pip setuptools ansible molecule
+
+ENTRYPOINT [ "/bin/bash", "/home/ciuser/run-unit-tests.sh" ]

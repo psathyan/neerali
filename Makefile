@@ -1,8 +1,10 @@
 # Settings
 SHELL				:= /bin/bash
 VIRTUAL_ENV			?= venv
-MOLECULE_CONFIG		?= .molecule.config.yaml
+MOLECULE_CONFIG		?= .config/molecule/config.yml
 ROLE_NAME			?=
+TEST_EXEC			?= molecule
+TEST_SUITE			?=
 
 define vars
 ${1}: export ROLE_NAME=${ROLE_NAME}
@@ -20,7 +22,7 @@ create-update-role:
 	$(if $(strip $(ROLE_NAME)),,$(error Please call make create-update-role ROLE_NAME=${ROLE_NAME}))
 	ansible-galaxy role init --role-skeleton _skeleton_role_ --init-path ./roles ${ROLE_NAME}
 
-.PHONY: run-molecule
-run-molecule:
-	$(if $(strip $(ROLE_NAME)),,$(error Please call make create-update-role ROLE_NAME=${ROLE_NAME}))
-	bash scripts/run-molecule.sh
+.PHONY: unit-test
+unit-test:
+	$(if $(strip $(TEST_SUITE)),,$(error Please call make run-tests TEST_TYPE=molecule TEST_MOD=${TEST_SUITE}))
+	bash scripts/run-tests.sh
