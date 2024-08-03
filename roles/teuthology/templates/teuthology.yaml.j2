@@ -4,8 +4,10 @@
 max_job_time: 2400
 results_email: "{{ email_address }}"
 archive_base: "{{ neerali_teuthology_artifactdir }}"
+{% if neerali_teuthology_conf_fog is defined %}
 fog:
   api_token: {{ neerali_teuthology_conf_fog.api_token }}
   user_token: {{ neerali_teuthology_conf_fog.user_token }}
   endpoint: {{ neerali_teuthology_conf_fog.endpoint }}
   machine_types: {{ neerali_teuthology_conf_fog.types }}
+{% endif %}

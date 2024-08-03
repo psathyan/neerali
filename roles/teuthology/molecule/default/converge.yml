@@ -23,6 +23,22 @@
     - role: "teuthology"
 
   tasks:
-    - name: Testing entry
-      ansible.builtin.debug:
-        msg: "This file can be used as a test suite"
+    - name: Test the workspace
+      block:
+        - name: Gather the workspace details
+          ansible.builtin.stat:
+            path: "{{ item }}"
+          register: _wrkspace_stat
+          loop:
+            - "{{ neerali_teuthology_artifactdir }}"
+            - "{{ neerali_teuthology_logdir }}"
+            - "/etc/teuthology.yaml"
+            - "{{ neerali_teuthology_artifactdir }}/venv"
+
+        - name: Verify the workspace exists
+          ansible.builtin.assert:
+            that:
+              - item.stat.exists
+          loop: "{{ _wrkspace_stat.results }}"
+          loop_control:
+            label: "{{ item.stat.path }}"

@@ -17,8 +17,25 @@
 # Central configuration entry point for molecule per scenario.
 
 log: true
+prerun: false
+
 provisioner:
   name: ansible
   log: true
-  env:
-    ANSIBLE_STDOUT_CALLBACK: yaml
+  inventory:
+    host_vars:
+      instance:
+        neerali_basedir: /tmp/neerali-data
+        ansible_user_dir: /tmp
+        neerali_systems_layout:
+          baremetal:
+            - name: node-01
+              os:
+                type: rhel
+                version: 9.4
+              roles:
+                - _admin
+                - mgr
+                - mon
+              devices:
+                data_disks: []

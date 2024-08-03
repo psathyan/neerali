@@ -62,4 +62,3 @@
     - neerali_systems_layout.baremetal is defined
     - neerali_teuthology_reimage | bool
   ansible.builtin.include_tasks: reimage.yaml
-  

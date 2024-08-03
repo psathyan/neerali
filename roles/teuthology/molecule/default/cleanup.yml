@@ -15,20 +15,12 @@
 # under the License.
 
 
-- name: Gather the list of nodes to be reimaged
-  ansible.builtin.set_fact:
-    _neerali_teuthology_reimage_nodes: >-
-      {{
-        neeral_systems_layout.baremetal | neerali.general.get_reimage_nodes
-      }}
+- name: Performing cleanup stage.
+  hosts: all
+  gather_facts: false
 
-- name: Reimage the nodes
-  vars:
-    _cmd: "{{neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
-    _log_file: "{{ neerali_teuthology_logdir }}/reimage.log"
-  ansible.builtin.shell:
-    cmd: "{{ _cmd }} {{ item }} | tee {{ _log_file }}"
-    creates: "{{ _log_file }}"
-  loop: "{{ _neerali_teuthology_reimage_nodes }}"
-  loop_control:
-    label: "{{ item }}"
+  tasks:
+    - name: Use the role cleanup tasks
+      ansible.builtin.include_role:
+        name: teuthology
+        tasks_from: cleanup.yaml
