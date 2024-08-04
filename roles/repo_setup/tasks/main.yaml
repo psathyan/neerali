@@ -1,0 +1,46 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Ensure Red Hat subscription manager is enabled and active
+  when:
+    - neerali_repo_setup_rhsm is defined
+    - ansible_distribution == "redhat"
+  ansible.builtin.include_tasks: redhat.yaml
+
+- name: Ensure the yum repo files exists
+  when:
+    - neerali_repo_setup_repos is defined
+    - neerali_repo_setup_repos | length > 0
+  ansible.builtin.include_tasks: repo.yaml
+
+- name: Update the system
+  when:
+    - neerali_repo_setup_os_update | bool
+  become: true
+  ansible.builtin.package:
+    name: "*"
+    state: latest  # noqa package-latest
+  register: _pkg_update
+
+- name: Reboot the system
+  when:
+    - _pkg_update is changed
+    - not neerali_repo_setup_dry_run
+    - inventory_hostname != (neeerali_target_host | default('localhost'))
+  become: true
+  ansible.builtin.reboot:
+    msg: "neerali has initiated a reboot."
