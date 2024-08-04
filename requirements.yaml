@@ -6,11 +6,5 @@ collections:
     type: git
   - name: https://github.com/ansible-collections/community.general
     type: git
-  - name: https://github.com/ansible-collections/community.crypto
-    type: git
-  - name: https://github.com/ansible-collections/kubernetes.core
-    type: git
-  - name: https://github.com/ansible-collections/ansible.netcommon
-    type: git
   - name: https://github.com/openstack/ansible-config_template
     type: git

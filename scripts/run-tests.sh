@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euxo pipefail
+set -euo pipefail
 
 project_dir="$(dirname $(readlink -f ${BASH_SOURCE[0]}))/../"
 _test_exe=${TEST_EXEC:-'ansible-test'}
@@ -9,7 +9,7 @@ _suite=${TEST_SUITE:-'integration'}
 ansible-lint -s
 black --check --diff .
 
-if [ "${_suite}" == "linters" ];
+if [ "${_suite}" == "linters" ]; then
     exit 0
 fi
 

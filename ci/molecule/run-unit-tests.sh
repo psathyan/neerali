@@ -10,8 +10,8 @@ set -euo pipefail
 #       $1      The type of test to be executed.
 #       $2      The ROLE_NAME of ansible-test type [sanity|integration]
 
-_type=${1:-"ansible-test"}
-_mod=${2:-"integration"}
+_type=${1:-"molecule"}
+_mod=${2:-""}
 
 export LC_ALL=C.UTF-8
 
@@ -34,11 +34,14 @@ if [ "${_type}" == "ansible-test" ]; then
     pushd ~/.ansible/collections/ansible_collections/neerali/general
     ansible-test ${_mod}
     popd
-else
+elif [ "${_type}" == "molecule" ]; then
     pushd roles/${2}
     echo "Executing molecule"
     molecule -c ${NEERALI_DIR}/.config/molecule/config.yml test
     popd
+else
+    echo "Unknown test execution"
+    exit 1
 fi
 
 popd

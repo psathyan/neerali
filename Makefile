@@ -10,6 +10,8 @@ define vars
 ${1}: export ROLE_NAME=${ROLE_NAME}
 ${1}: export MOLECULE_CONFIG=${MOLECULE_CONFIG}
 ${1}: export VIRTUAL_ENV=${VIRTUAL_ENV}
+${1}: export TEST_EXEC=${TEST_EXEC}
+${1}: export SHELL=${SHELL}
 endef
 
 # Targets
