@@ -14,20 +14,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: The playbook executes tasks related to deploy and configure the
-# system under test.
+# Purpose: prepare the environment for deployment and testing
 
-
+# Pre stage playbooks
 - name: Run pre infra hooks
   vars:
-    step: pre_infra
+    step: pre_prepare
   ansible.builtin.import_playbook: hook.yaml
 
-- name: Provision or reimage the systems
-  hosts: "{{ neerali_target_host | default('localhost') }}"
+- name: Prepare the test environment
+  hosts: ceph_all
 
   tasks:
     - name: Load parameters files
+      delegate_to: "{{ neerali_target_host | default('localhost') }}"
       block:
         - name: Gather information about parameter directory
           ansible.builtin.stat:
@@ -41,36 +41,12 @@
           ansible.builtin.include_vars:
             dir: "{{ neerali_basedir }}/artifacts/parameters"
 
-    - name: Reimage systems using teuthology
-      when:
-        - neerali_use_teuthology is defined
-        - neerali_use_teuthology | bool
+    - name: Configure repositories
       ansible.builtin.include_role:
-        name: teuthology
+        name: repo_setup
 
-    # This must always be the last task in this play.
-    - name: Add the phyiscal servers to inventory
-      when:
-        - neerali_systems_layout.baremetal is defined
-      ansible.builtin.add_host:
-        name: "{{ item.name }}"
-        groups: "{{ item.roles }} + ['ceph_all']"
-      loop: "{{ neerali_systems_layout.baremetal }}"
-      loop_control:
-        label: "{{ item.name }}"
-
-    # Add provisioned systems to inventory
-    - name: Add the provisioned vms to inventory
-      when:
-        - neerali_provisioned_systems is defined
-      ansible.builtin.add_host:
-        name: "{{ item.name }}"
-        groups: "{{ item.roles }} + ['ceph_all']"
-      loop: "{{ neerali_provisioned_systems }}"
-      loop_control:
-        label: "{{ item.name }}"
-
-- name: Run post infra hooks
+# Post prepare playbooks
+- name: Run pre infra hooks
   vars:
-    step: post_infra
+    step: post_prepare
   ansible.builtin.import_playbook: hook.yaml
