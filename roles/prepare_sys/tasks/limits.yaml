@@ -14,28 +14,21 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: prepare the environment for deployment and testing
 
-# Pre stage playbooks
-- name: Run pre infra hooks
-  vars:
-    step: pre_prepare
-  ansible.builtin.import_playbook: hook.yaml
+- name: Ensure the system file descriptors are unlimited
+  become: true
+  community.general.pam_limits:
+    domain: ceph
+    limit_type: soft
+    limit_item: nofile
+    value: unlimited
 
-- name: Prepare the test environment
-  hosts: ceph_all
-
-  tasks:
-    - name: Configure repositories
-      ansible.builtin.include_role:
-        name: repo_setup
-
-    - name: Prepare the system for deployment
-      ansible.builtin.include_role:
-        name: prepare_sys
-
-# Post prepare playbooks
-- name: Run pre infra hooks
-  vars:
-    step: post_prepare
-  ansible.builtin.import_playbook: hook.yaml
+- name: Ensure the right ulimit value
+  when:
+    - neerali_prepare_sys_ulimit
+    - ansible_user_id != 'root'
+  community.general.pam_limits:
+    domain: "{{ ansible_user_id }}"
+    limit_type: soft
+    limit_item: nproc
+    value: unlimited

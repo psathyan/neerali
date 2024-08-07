@@ -14,28 +14,21 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: prepare the environment for deployment and testing
 
-# Pre stage playbooks
-- name: Run pre infra hooks
-  vars:
-    step: pre_prepare
-  ansible.builtin.import_playbook: hook.yaml
+- name: Cleanup authorized ssh key
+  become: true
+  when: neerali_ssh_key is defined
+  ansible.posix.authorized_key:
+    user: "{{ item }}"
+    key: "{{ neerali_ssh_key.public_key }}"
+  loop:
+    - "{{ neerali_prepare_sys_user }}"
+    - "root"
+  loop_control:
+    label: "{{ item }}"
 
-- name: Prepare the test environment
-  hosts: ceph_all
-
-  tasks:
-    - name: Configure repositories
-      ansible.builtin.include_role:
-        name: repo_setup
-
-    - name: Prepare the system for deployment
-      ansible.builtin.include_role:
-        name: prepare_sys
-
-# Post prepare playbooks
-- name: Run pre infra hooks
-  vars:
-    step: post_prepare
-  ansible.builtin.import_playbook: hook.yaml
+- name: Remove the test user
+  become: true
+  ansible.builtin.user:
+    name: "{{ neerali_prepare_sys_user }}"
+    state: absent

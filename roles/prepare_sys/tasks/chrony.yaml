@@ -14,28 +14,19 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: prepare the environment for deployment and testing
 
-# Pre stage playbooks
-- name: Run pre infra hooks
-  vars:
-    step: pre_prepare
-  ansible.builtin.import_playbook: hook.yaml
+- name: Deploy chrony configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/chrony.conf.j2
+    dest: "/etc/chrony.conf"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: 'Restart chronyd'
 
-- name: Prepare the test environment
-  hosts: ceph_all
-
-  tasks:
-    - name: Configure repositories
-      ansible.builtin.include_role:
-        name: repo_setup
-
-    - name: Prepare the system for deployment
-      ansible.builtin.include_role:
-        name: prepare_sys
-
-# Post prepare playbooks
-- name: Run pre infra hooks
-  vars:
-    step: post_prepare
-  ansible.builtin.import_playbook: hook.yaml
+# We are forcing a notification as it might be too late when all tasks in
+# the play completes.
+- name: Force the restart
+  ansible.builtin.meta: flush_handlers

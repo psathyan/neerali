@@ -14,28 +14,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: prepare the environment for deployment and testing
+# Variables that should not be modified during the course of execution are
+# specified here. They should have a prefix of
+# "neerali_prepare_sys"
 
-# Pre stage playbooks
-- name: Run pre infra hooks
-  vars:
-    step: pre_prepare
-  ansible.builtin.import_playbook: hook.yaml
 
-- name: Prepare the test environment
-  hosts: ceph_all
-
-  tasks:
-    - name: Configure repositories
-      ansible.builtin.include_role:
-        name: repo_setup
-
-    - name: Prepare the system for deployment
-      ansible.builtin.include_role:
-        name: prepare_sys
-
-# Post prepare playbooks
-- name: Run pre infra hooks
-  vars:
-    step: post_prepare
-  ansible.builtin.import_playbook: hook.yaml
+neerali_prepare_sys_packages:
+  - podman
+  - lvm2
+  - chrony
