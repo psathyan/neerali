@@ -1,5 +1,5 @@
 # pages.github configuration for jekyll
-source        : .
+source        : _pages
 site          : _site
 exclude       : ['*.yml', '*.yaml', '*.j2']
 encoding      : "utf-8"
