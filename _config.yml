@@ -1,7 +1,7 @@
 # pages.github configuration for jekyll
 source        : .
 site          : _site
-exclude       : ['*.yml', '*.yaml']
+exclude       : ['*.yml', '*.yaml', '*.j2']
 encoding      : "utf-8"
 mardown_ext   : "md"
 
