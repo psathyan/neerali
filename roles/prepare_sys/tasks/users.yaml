@@ -19,7 +19,7 @@
   become: true
   ansible.builtin.user:
     name: "{{ neerali_prepare_sys_user }}"
-    password: "$6$DD1eQbItan2q9s8U$uork5ZuAoMKmj4eCCtk8zPHsy9VSwBlF6in8N7ke3IYBaR9KBnrTWgVGEu1THGxU3wDVaFvQxtEr0iRVnJ39J/"
+    password: "{{ neerali_prepare_sys_user_passwd }}"
     comment: "Ceph test user"
     create_home: true
   register: _user_rst
