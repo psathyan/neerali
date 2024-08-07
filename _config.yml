@@ -1,0 +1,11 @@
+# pages.github configuration for jekyll
+source        : .
+site          : _site
+exclude       : ['*.yml', '*.yaml']
+encoding      : "utf-8"
+mardown_ext   : "md"
+
+markdown      : kramdown
+highlighter   : rouge
+lsi           : false
+incremental   : false
