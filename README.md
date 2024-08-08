@@ -1,6 +1,8 @@
 # neerali
 A framework for continuous testing of Ceph.
 
+.. toctree::
+
 ## Licenses
 (c) Copyright 2024, IBM Corporation
 
