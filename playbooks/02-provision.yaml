@@ -18,9 +18,9 @@
 # system under test.
 
 
-- name: Run pre infra hooks
+- name: Run pre-stage provision hooks
   vars:
-    step: pre_infra
+    step: pre_provision
   ansible.builtin.import_playbook: hook.yaml
 
 - name: Provision or reimage the systems
@@ -70,7 +70,7 @@
       loop_control:
         label: "{{ item.name }}"
 
-- name: Run post infra hooks
+- name: Run post-stage provision hooks
   vars:
-    step: post_infra
+    step: post_provision
   ansible.builtin.import_playbook: hook.yaml

@@ -17,9 +17,9 @@
 # Purpose: prepare the environment for deployment and testing
 
 # Pre stage playbooks
-- name: Run pre infra hooks
+- name: Run pre-stage deploy hooks
   vars:
-    step: pre_prepare
+    step: pre_deploy
   ansible.builtin.import_playbook: hook.yaml
 
 - name: Prepare the test environment
@@ -34,8 +34,8 @@
       ansible.builtin.include_role:
         name: prepare_sys
 
-# Post prepare playbooks
-- name: Run pre infra hooks
+# Post deploy playbooks
+- name: Run post-stage deploy hooks
   vars:
-    step: post_prepare
+    step: post_deploy
   ansible.builtin.import_playbook: hook.yaml
