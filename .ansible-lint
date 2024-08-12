@@ -5,6 +5,8 @@ exclude_paths:
   - .cache/
   - .venv/
   - custom/
+  - _pages
+  - _config.yml
 strict: true
 quiet: false
 verbosity: 1

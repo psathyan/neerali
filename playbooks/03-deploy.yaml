@@ -34,6 +34,32 @@
       ansible.builtin.include_role:
         name: prepare_sys
 
+- name: Deploy ceph
+  hosts: _admin, "{{ neearli_target_host | default('localhost') }}"
+
+  tasks:
+    - name: Load parameters files
+      delegate_to: "{{ neerali_target_host | default('localhost') }}"
+      block:
+        - name: Gather information about parameter directory
+          ansible.builtin.stat:
+            path: "{{ neerali_basedir }}/artifacts/parameters"
+          register: _params_dir
+
+        - name: Load the parameters
+          when:
+            - _params_dir.stat.exists
+            - _params_dir.stat.isdir
+          ansible.builtin.include_vars:
+            dir: "{{ neerali_basedir }}/artifacts/parameters"
+
+    - name: Install cephadm package
+      delegate_to: _admin
+      become: true
+      ansible.builtin.package:
+        name: cephadm
+        state: present
+
 # Post deploy playbooks
 - name: Run post-stage deploy hooks
   vars:
