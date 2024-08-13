@@ -51,3 +51,17 @@ The output would be
 ```bash
 ceph-node-01
 ```
+
+### dict2args
+An helper that converts a given dictionary into a string in the CLI arguments
+format. The return value can be passed directly to any executable.
+
+```YAML
+_boostrap_args:
+  skip-pull: True
+  skip-ping-check: False
+  mon-ip: 192.168.10.10
+```
+
+After parsing the dictionary the output would be
+`--skip-pull --mon-ip 192.168.10.10`
