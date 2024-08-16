@@ -17,14 +17,6 @@
 # The purpose of this task is to gather the monitor IP address
 
 
-- name: Gather the required facts to determine IP address
-  ansible.builtin.setup:
-    gather_subset:
-      - all_ipv4_addresses
-      - all_ipv6_addresses
-      - default_ipv4
-      - default_ipv6
-
 - name: Gather the monitor address
   when:
     - neerali_ceph_public_network is defined

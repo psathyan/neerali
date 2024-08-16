@@ -67,6 +67,14 @@
             neerali_systems_layout.baremetal | neerali.general.get_admin_nodes
           }}
 
+    - name: Gather the required facts to determine IP address
+      ansible.builtin.setup:
+        gather_subset:
+          - all_ipv4_addresses
+          - all_ipv6_addresses
+          - default_ipv4
+          - default_ipv6
+
     - name: Deploy ceph
       ansible.builtin.include_role:
         name: ceph
