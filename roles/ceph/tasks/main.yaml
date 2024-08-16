@@ -31,3 +31,14 @@
 - name: Perform cluster bootstrap
   ansible.builtin.include_tasks:
     file: bootstrap.yaml
+
+- name: Ensure expected component images
+  when: neerali_ceph_mgr_custom_images is defined
+  ansible.builtin.shell: |
+    set xeuo pipefail
+    ceph config set mgr mgr/cephadm/container_image_{{ item.key }} {{ item.value }}
+    touch {{ neerali_ceph_logdir }}/{{ item.key }}.success
+  creates: "{{ neerali_ceph_logdir }}/{{ item.key }}.success"
+  loop: "{{ neerali_ceph_mgr_custom_images | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
