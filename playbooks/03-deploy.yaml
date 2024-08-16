@@ -54,11 +54,25 @@
             dir: "{{ neerali_basedir }}/artifacts/parameters"
 
     - name: Install cephadm package
-      delegate_to: _admin
       become: true
       ansible.builtin.package:
         name: cephadm
         state: present
+      delegate_to: _admin
+
+    - name: Gather the admin nodes to be used for deployment
+      ansible.builtin.set_fact:
+        _ceph_installers: >-
+          {{
+            neerali_systems_layout.baremetal | neerali.general.get_admin_nodes
+          }}
+
+    - name: Deploy ceph
+      ansible.builtin.include_role:
+        name: ceph
+        apply:
+          become: true
+          delegate_to: "{{ _ceph_installers }}"
 
 # Post deploy playbooks
 - name: Run post-stage deploy hooks

@@ -1,0 +1,40 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Prepare the argument map
+  ansible.builtin.set_fact:
+    _bootstrap_args: "{{ neerali_ceph_bootstrap_config | default({}) }}"
+
+- name: Gather the monitor IP address
+  when:
+    - _bootstrap_args['mon-ip'] is not defined
+  ansible.builtin.include_tasks:
+    file: monitor_ip.yaml
+
+# ToDo: Add support for custom arguments for multi cluster
+- name: Debug arguments passed to bootstrap
+  ansible.builtin.debug:
+    var: _bootstrap_args
+
+- name: Running minimal bootstrap
+  vars:
+    _args: "{{ _bootstrap_args | neerali.general.dict2args }}"
+  ansible.builtin.shell: |
+    set -xuo pipefail
+    cephadm shell {{ _args }}
+    touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
+  creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
