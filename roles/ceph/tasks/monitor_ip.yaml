@@ -40,3 +40,4 @@
       {{
         _bootstrap_args | combine({'mon-ip': ansible_default_ipv4.address})
       }}
+    neerali_ceph_public_network: "{{ ansible_default_ipv4.network }}"
