@@ -34,3 +34,13 @@
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
   loop_control:
     label: "{{ item }}"
+
+- name: Add the phyiscal servers to inventory
+  when:
+    - neerali_systems_layout.baremetal is defined
+  ansible.builtin.add_host:
+    name: "{{ item.name }}"
+    groups: "{{ item.roles }} + ['nodes']"
+  loop: "{{ neerali_systems_layout.baremetal }}"
+  loop_control:
+    label: "{{ item.name }}"

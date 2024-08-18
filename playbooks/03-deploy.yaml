@@ -23,7 +23,7 @@
   ansible.builtin.import_playbook: hook.yaml
 
 - name: Prepare the test environment
-  hosts: ceph_all
+  hosts: nodes
 
   tasks:
     - name: Configure repositories

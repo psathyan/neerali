@@ -48,28 +48,6 @@
       ansible.builtin.include_role:
         name: teuthology
 
-    # This must always be the last task in this play.
-    - name: Add the phyiscal servers to inventory
-      when:
-        - neerali_systems_layout.baremetal is defined
-      ansible.builtin.add_host:
-        name: "{{ item.name }}"
-        groups: "{{ item.roles }} + ['ceph_all']"
-      loop: "{{ neerali_systems_layout.baremetal }}"
-      loop_control:
-        label: "{{ item.name }}"
-
-    # Add provisioned systems to inventory
-    - name: Add the provisioned vms to inventory
-      when:
-        - neerali_provisioned_systems is defined
-      ansible.builtin.add_host:
-        name: "{{ item.name }}"
-        groups: "{{ item.roles }} + ['ceph_all']"
-      loop: "{{ neerali_provisioned_systems }}"
-      loop_control:
-        label: "{{ item.name }}"
-
 - name: Run post-stage provision hooks
   vars:
     step: post_provision
