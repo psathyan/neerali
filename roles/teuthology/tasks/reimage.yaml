@@ -41,6 +41,8 @@
   ansible.builtin.add_host:
     name: "{{ item.name }}"
     groups: "{{ item.roles }} + ['nodes']"
+    ansible_host: "{{ item.ansible_host | default(omit) }}"
+    neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
   loop: "{{ neerali_systems_layout.baremetal }}"
   loop_control:
     label: "{{ item.name }}"
