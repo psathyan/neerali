@@ -1,10 +1,13 @@
 # ceph
-This role installs and configures Ceph storage.
+This role installs and configures Ceph storage. The role reads the configuration
+information under the each cluster name / location.
 
 ## Privilege escalation
 Yes, privileged access is required for installing ceph.
 
 ## Parameters
+* `neerali_ceph_cluster_name` (str) defaults to `ceph`, name of the cluster
+  location.
 * `neerali_ceph_public_network` (str) public network CIDR
 * `neerali_ceph_bootstrap_config` (dict) key value pairs as supported by
   cephadm bootstrap.
@@ -20,17 +23,16 @@ Yes, privileged access is required for installing ceph.
 
 ### Example for passing additional bootstrap arguments
 ```YAML
-neerali_ceph_bootstrap_config:
-  cluster-network: 192.168.10.0/24
-  ssh-user: zuul
+ceph:
+  neerali_ceph_bootstrap_config:
+    cluster-network: 192.168.10.0/24
+    ssh-user: zuul
 ```
 
 ### Example for overriding default images
 ```YAML
-neerali_ceph_mgr_custom_images:
-  prometheus: quay.io/prometheus/prometheus:latest
-  loki: docker.io/grafana/loki:latest
+ceph:
+  neerali_ceph_mgr_custom_images:
+    prometheus: quay.io/prometheus/prometheus:latest
+    loki: docker.io/grafana/loki:latest
 ```
-
-## Examples
-Add samples on using the role.

@@ -18,18 +18,18 @@
 - name: Prepare the host map
   ansible.builtin.set_fact:
     _host_map: >-
-      {% set _map = {}                                                               -%}
-      {% set _clust_name = hostvars[inventory_hostname]['neerali_ceph_cluster_name'] -%}
-      {% for _node in hostvars                                                       -%}
-      {%     set _ips = _node['all_ipv4_addresses'] + _node['all_ipv6_addresses']    -%}
-      {%     set _hcn = _node['neerali_ceph_cluster_name']                           -%}
-      {%     for _ip in _ips                                                         -%}
-      {%         if (_ip is ansible.builtin.in_network neerali_ceph_public_network) and
-                    (_hcn == _clust_name)                                            -%}
-      {%             set _ = _map | combine({_node['hostname']: _ip})                -%}
-      {%         endif                                                               -%}
-      {%      endfor                                                                 -%}
-      {% endfor                                                                      -%}
+      {% set _map = {}                                                                     -%}
+      {% set _clust_name = hostvars[inventory_hostname]['neerali_ceph_cluster_name']       -%}
+      {% set _net = hostvars[inventory_hostname][_clust_name][neerali_ceph_public_network] -%}
+      {% for _node in hostvars                                                             -%}
+      {%     set _ips = _node['all_ipv4_addresses'] + _node['all_ipv6_addresses']          -%}
+      {%     set _hcn = _node['neerali_ceph_cluster_name']                                 -%}
+      {%     for _ip in _ips                                                               -%}
+      {%         if (_ip is ansible.builtin.in_network _net) and (_hcn == _clust_name)     -%}
+      {%             set _ = _map | combine({_node['hostname']: _ip})                      -%}
+      {%         endif                                                                     -%}
+      {%      endfor                                                                       -%}
+      {% endfor                                                                            -%}
       {{ _map }}
 
 - name: Print the gather host map

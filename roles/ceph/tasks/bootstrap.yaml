@@ -17,7 +17,10 @@
 
 - name: Prepare the argument map
   ansible.builtin.set_fact:
-    _bootstrap_args: "{{ neerali_ceph_bootstrap_config | default({}) }}"
+    _bootstrap_args: >-
+      {{
+        neerali_ceph_cluster_name.neerali_ceph_bootstrap_config | default({})
+      }}
 
 - name: Gather the monitor IP address
   when:

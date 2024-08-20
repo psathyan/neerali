@@ -25,3 +25,4 @@ neerali_ceph_basedir: >-
   }}
 neerali_ceph_artifactdir: "{{ neerali_ceph_basedir ~ '/artifacts/ceph' }}"
 neerali_ceph_logdir: "{{ neerali_ceph_basedir ~ '/logs/ceph' }}"
+neerali_ceph_cluster_name: "ceph"
