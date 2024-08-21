@@ -37,21 +37,9 @@
   loop_control:
     label: "{{ item }}"
 
-- name: Add the phyiscal servers to inventory
-  when:
-    - neerali_systems_layout.baremetal is defined
-  ansible.builtin.add_host:
-    name: "{{ item.name }}"
-    groups: "{{ item.roles }} + ['nodes']"
-    ansible_host: "{{ item.ansible_host }}"
-    neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
-  loop: "{{ neerali_systems_layout.baremetal }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Provisioned systems mapper
-  ansible.builtin.set_fact:
-    neerali_systems_provisioned: >-
+- name: Post reimage tasks
+  vars:
+    _hosts: >-
       {{
         (
           neerali_systems_layout.baremetal |
@@ -65,3 +53,20 @@
           rejectattr('online', 'equalto', false)
         )
       }}
+  block:
+    - name: Add the systems to the provisioned list
+      ansible.builtin.set_fact:
+        neerali_systems_provisioned: >-
+          {{
+            (neerali_systems_provisioned | default([])) + _hosts
+          }}
+
+    - name: Add the phyiscal servers to inventory
+      ansible.builtin.add_host:
+        name: "{{ item.name }}"
+        groups: "{{ item.roles }} + ['nodes']"
+        ansible_host: "{{ item.ansible_host }}"
+        neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
+      loop: "{{ _hosts }}"
+      loop_control:
+        label: "{{ item.name }}"
