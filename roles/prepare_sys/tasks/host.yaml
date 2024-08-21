@@ -22,7 +22,7 @@
     neerali_ceph_public_network: >-
       {{
         neerali_ceph_config[neerali_ceph_cluster_name]['public_network'] |
-        ansible_default_ipv4.network
+        default(ansible_default_ipv4.network)
       }}
 
 - name: Gather the public network block
