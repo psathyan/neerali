@@ -47,6 +47,5 @@
           become: true
           delegate_to: >-
             {{
-              neerali_systems_layout.baremetal |
-              neerali.general.get_admin_nodes
+              neerali_systems_provisioned | neerali.general.get_admin_nodes
             }}
