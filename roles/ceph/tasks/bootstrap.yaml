@@ -19,14 +19,21 @@
   ansible.builtin.set_fact:
     _bootstrap_args: >-
       {{
-        neerali_ceph_cluster_name.neerali_ceph_bootstrap_config | default({})
+        neerali_ceph_config[neerali_cluster_name]['bootstrap_config'] |
+        default({})
       }}
 
-- name: Gather the monitor IP address
-  when:
-    - _bootstrap_args['mon-ip'] is not defined
-  ansible.builtin.include_tasks:
-    file: monitor_ip.yaml
+- name: Insert the monitor ip address
+  ansible.builtin.set_fact:
+    _bootstrap_args: >-
+      {{
+        _bootstrap_args |
+        combine(
+          {
+            'mon-ip': neerali_ceph_nodes_public_ips[neerali_cluster_name][inventory_hostname]
+          }
+        )
+      }}
 
 # ToDo: Add support for custom arguments for multi cluster
 - name: Debug arguments passed to bootstrap
