@@ -34,12 +34,20 @@
 
 - name: Ensure expected component images
   when:
-    - neerali_ceph_cluster_name.neerali_ceph_mgr_custom_images is defined
+    - neerali_ceph_config[neerali_ceph_cluster_name]['custom_images'] is defined
   ansible.builtin.shell: |
     set -o pipefail
     ceph config set mgr mgr/cephadm/container_image_{{ item.key }} {{ item.value }}
     touch {{ neerali_ceph_logdir }}/{{ item.key }}.success
   creates: "{{ neerali_ceph_logdir }}/{{ item.key }}.success"
-  loop: "{{ neerali_ceph_cluster_name.neerali_ceph_mgr_custom_images | dict2items }}"
+  loop: >-
+    {{
+      neerali_ceph_config[neerali_ceph_cluster_name]['custom_images'] |
+      dict2items
+    }}
   loop_control:
     label: "{{ item.key }}"
+
+- name: Add hosts to the cluster
+  ansible.builtin.include_tasks:
+    file: hosts.yaml
