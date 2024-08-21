@@ -16,14 +16,9 @@
 
 # Purpose: prepare the environment for deployment and testing
 
-# Pre stage playbooks
-- name: Run pre-stage deploy hooks
-  vars:
-    step: pre_deploy
-  ansible.builtin.import_playbook: hook.yaml
-
 - name: Prepare the test environment
   hosts: nodes
+  gather_facts: true
 
   tasks:
     - name: Configure repositories
@@ -35,55 +30,22 @@
         name: prepare_sys
 
 - name: Deploy ceph
-  hosts: _admin, "{{ neearli_target_host | default('localhost') }}"
+  hosts: _admin
+  gather_facts: false
 
   tasks:
-    - name: Load parameters files
-      delegate_to: "{{ neerali_target_host | default('localhost') }}"
-      block:
-        - name: Gather information about parameter directory
-          ansible.builtin.stat:
-            path: "{{ neerali_basedir }}/artifacts/parameters"
-          register: _params_dir
-
-        - name: Load the parameters
-          when:
-            - _params_dir.stat.exists
-            - _params_dir.stat.isdir
-          ansible.builtin.include_vars:
-            dir: "{{ neerali_basedir }}/artifacts/parameters"
-
     - name: Install cephadm package
       become: true
       ansible.builtin.package:
         name: cephadm
         state: present
-      delegate_to: _admin
-
-    - name: Gather the admin nodes to be used for deployment
-      ansible.builtin.set_fact:
-        _ceph_installers: >-
-          {{
-            neerali_systems_layout.baremetal | neerali.general.get_admin_nodes
-          }}
-
-    - name: Gather the required facts to determine IP address
-      ansible.builtin.setup:
-        gather_subset:
-          - all_ipv4_addresses
-          - all_ipv6_addresses
-          - default_ipv4
-          - default_ipv6
 
     - name: Deploy ceph
       ansible.builtin.include_role:
         name: ceph
         apply:
           become: true
-          delegate_to: "{{ _ceph_installers }}"
-
-# Post deploy playbooks
-- name: Run post-stage deploy hooks
-  vars:
-    step: post_deploy
-  ansible.builtin.import_playbook: hook.yaml
+          delegate_to: >-
+            {{
+              neerali_systems_layout.baremetal | neerali.general.get_admin_nodes
+            }}
