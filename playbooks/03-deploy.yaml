@@ -14,8 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: prepare the environment for deployment and testing
-
+# Tasks pertaining to preparing the test environment
 - name: Prepare the test environment
   hosts: nodes
   gather_facts: true
@@ -29,6 +28,7 @@
       ansible.builtin.include_role:
         name: prepare_sys
 
+# tasks pertaining to deploying of the cluster.
 - name: Deploy ceph
   hosts: _admin
   gather_facts: false
@@ -47,5 +47,6 @@
           become: true
           delegate_to: >-
             {{
-              neerali_systems_layout.baremetal | neerali.general.get_admin_nodes
+              neerali_systems_layout.baremetal |
+              neerali.general.get_admin_nodes
             }}
