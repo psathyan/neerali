@@ -17,18 +17,23 @@
 # Add entries to /etc/host yaml.
 
 
-# <cluster-name> variables passed as extra vars cannot be modified hence a new
-# variable is defined to hold the public network IP addresses.
-- name: Gather the content
+- name: Gather the public network
+  ansible.builtin.set_fact:
+    neerali_ceph_public_network: >-
+      {{
+        neerali_ceph_config[neerali_ceph_cluster_name]['public_network'] |
+        ansible_default_ipv4.network
+      }}
+
+- name: Gather the public network block
   ansible.builtin.set_fact:
     neerali_ceph_nodes_public_ips: >-
       {% set _data = {}                                                                  -%}
       {% for _node in hostvars                                                           -%}
       {%     set _ips = _node['all_ipv4_addresses'] + _node['all_ipv6_addresses']        -%}
       {%     set _clust_name = hostvars[_node]['neerali_ceph_cluster_name']              -%}
-      {%     set _mon_net = hostvars[_node][_clust_name]['neerali_ceph_public_network']  -%}
       {%     for _ip in _ips                                                             -%}
-      {%         if _ip is ansible.utils.in_network _mon_net                             -%}
+      {%         if _ip is ansible.utils.in_network neerali_ceph_public_network          -%}
       {%-            set _ = _data | combine({_clust_name:{_node['hostname']: _ip}},
                                              recursive=true)                             -%}
       {%         endif                                                                   -%}

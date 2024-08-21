@@ -48,3 +48,7 @@
 - name: Ensure DTR access is available
   ansible.builtin.include_tasks:
     file: podman.yaml
+
+- name: Ensure hosts file contains all node public network information.
+  ansible.builtin.include_tasks:
+    file: host.yaml

@@ -20,6 +20,15 @@
   gather_facts: true
 
   tasks:
+    - name: Create awareness to provisioned variables
+      vars:
+        _host: "{{ neerali_target_host | default('localhost') }}"
+      ansible.builtin.set_fact:
+        neerali_systems_provisioned: >-
+          {{
+            hostvars[_host]['neerali_systems_provisioned']
+          }}
+
     - name: Configure repositories
       ansible.builtin.include_role:
         name: repo_setup
