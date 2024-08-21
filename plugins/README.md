@@ -10,6 +10,7 @@ version and a list of nodes. The filter expects the below mapping
 neerali_systems_layout:
   baremetal:
     - name: ceph-node-01
+      cluster: ceph
       driver: teuthology
       os:
         type: rhel
@@ -22,7 +23,8 @@ neerali_systems_layout:
         wal: []
         db: []
     - name: ceph-node-02
-      provisioner: teuthology
+      cluster: ceph
+      driver: teuthology
       os:
         type: rhel
         version: 9.2
