@@ -19,12 +19,14 @@
   ansible.builtin.set_fact:
     _neerali_teuthology_reimage_nodes: >-
       {{
-        neeral_systems_layout.baremetal | neerali.general.get_reimage_nodes
+        neeral_systems_layout.baremetal |
+        selectattr('driver', 'equalto', 'teuthology')
+        neerali.general.get_reimage_nodes
       }}
 
 - name: Reimage the nodes
   vars:
-    _cmd: "{{neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
+    _cmd: "{{ neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
     _log_file: "{{ neerali_teuthology_logdir }}/reimage.log"
   ansible.builtin.shell:
     cmd: |
@@ -52,10 +54,13 @@
     neerali_systems_provisioned: >-
       {{
         (
-          neerali_systems_layout.baremetal | selectattr('online', 'undefined')
+          neerali_systems_layout.baremetal |
+          selectattr('driver', 'equalto', 'teuthology') |
+          selectattr('online', 'undefined')
         ) +
         (
           neerali_systems_layout.baremetal |
+          selectattr('driver', 'equalto', 'teuthology') |
           selectattr('online', 'defined') |
           rejectattr('online', 'equalto', false)
         )
