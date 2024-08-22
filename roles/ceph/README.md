@@ -15,19 +15,20 @@ Yes, privileged access is required for installing ceph.
 
 ### Supported keys for ceph config
 * `public_network` (str) public network CIDR
-* `bootstrap_config` (dict) key value pairs as supported by
-  cephadm bootstrap.
+* `bootstrap_config` (dict) key value pairs as supported by cephadm bootstrap.
   Refer [link](https://docs.ceph.com/en/latest/man/8/cephadm/#bootstrap) for
-  all supportted options
-* `custom_images` (dict) key value pair holding details about
-  custom container images to be used for deployment. The key must the suffix
-  added to `container_image_<key>` with the value pointing to the URI of the
-  image. The supported keys can be referred from
+  all supportted options.
+* `custom_images` (dict) key value pair holding details about custom container
+  images to be used for deployment. The key must the suffix added to
+  `container_image_<key>` with the value pointing to the URI of the image. The
+  supported keys can be referred from
   [docs](https://docs.ceph.com/en/latest/cephadm/services/monitoring/#using-custom-images)
-  Refer the
-  [section](#example-for-overriding-default-images) 
+  Refer the [section](#example-for-overriding-default-images)
+* `osd_config` (dict) supports `options | content` keys. `options` holds a
+  string that can be directly passed to the orchestrator. Whereas `content` is
+  a list of spec file contents that needs to be applied.
 
-### Example for passing additional bootstrap arguments
+#### Example for passing additional bootstrap arguments
 ```YAML
 neerali_ceph_config:
   ceph:
@@ -36,7 +37,7 @@ neerali_ceph_config:
       ssh-user: zuul
 ```
 
-### Example for overriding default images
+#### Example for overriding default images
 ```YAML
 neerali_ceph_config:
   ceph:
