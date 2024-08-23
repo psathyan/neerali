@@ -73,7 +73,7 @@
     - name: Add the phyiscal servers to inventory
       ansible.builtin.add_host:
         name: "{{ item.name }}"
-        groups: "{{ item.roles }} + ['nodes']"
+        groups: "{{ item.roles + ['nodes'] }}"
         ansible_host: "{{ item.ansible_host }}"
         ansible_user: "ubuntu"
         neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
