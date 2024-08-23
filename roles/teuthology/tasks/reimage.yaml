@@ -30,13 +30,20 @@
     _log_file: "{{ neerali_teuthology_logdir }}/reimage.success"
   ansible.builtin.shell:
     cmd: |
-      set -o pipefail
-      {{ _cmd }} {{ item }} --owner {{ neerali_teuthology_reimage_owner }}
+      set -euxo pipefail
+      {{ _cmd }} --owner {{ neerali_teuthology_reimage_owner }} {{ item }}
       tee {{ _log_file }}
     creates: "{{ _log_file }}"
+  register: _reimage_results
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
   loop_control:
     label: "{{ item }}"
+
+- name: Assert reimage results
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+  loop: "{{ _reimage_results.results }}"
 
 - name: Post reimage tasks
   vars:

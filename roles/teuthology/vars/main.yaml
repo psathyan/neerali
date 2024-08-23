@@ -21,3 +21,4 @@
 
 neerali_teuthology_packages:
   - git-core
+  - ipmitool
