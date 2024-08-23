@@ -31,7 +31,8 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      {{ _cmd }} {{ item }} | tee {{ _log_file }}
+      {{ _cmd }} {{ item }} --owner {{ neerali_teuthology_reimage_owner }} |
+      tee {{ _log_file }}
     creates: "{{ _log_file }}"
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
   loop_control:
