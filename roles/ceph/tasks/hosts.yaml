@@ -15,44 +15,32 @@
 # under the License.
 
 
-- name: Prepare the host map
-  ansible.builtin.set_fact:
-    _host_map: >-
-      {% set _map = {}                                                                     -%}
-      {% set _clust_name = hostvars[inventory_hostname]['neerali_ceph_cluster_name']       -%}
-      {% set _net = hostvars[inventory_hostname][_clust_name][neerali_ceph_public_network] -%}
-      {% for _node in hostvars                                                             -%}
-      {%     set _ips = _node['all_ipv4_addresses'] + _node['all_ipv6_addresses']          -%}
-      {%     set _hcn = _node['neerali_ceph_cluster_name']                                 -%}
-      {%     for _ip in _ips                                                               -%}
-      {%         if (_ip is ansible.builtin.in_network _net) and (_hcn == _clust_name)     -%}
-      {%             set _ = _map | combine({_node['hostname']: _ip})                      -%}
-      {%         endif                                                                     -%}
-      {%      endfor                                                                       -%}
-      {% endfor                                                                            -%}
-      {{ _map }}
-
-- name: Print the gather host map
-  ansible.builtin.debug:
-    var: _host_map
-
 - name: Add the identified hosts to the cluster
   var:
-    _log_file: "{{ neerali_ceph_logdir }}/add_host_{{ item.key }}.success"
+    _log_file: "{{ neerali_ceph_logdir }}/add_host_{{ item }}.success"
     _labels: >-
       {{
-        neerali_systems_layout.baremetal |
-        selectattr('ansible_host', 'equalto', item.key) |
-        selectattr('cluster', 'match', neerali_ceph_cluster_name) |
+        neerali_systems_provisioned |
+        selectattr('name', 'equalto', item) |
+        selectattr('cluster', 'equalto', neerali_ceph_cluster_name) |
         map(attribute='roles') |
         first |
         join(',')
       }}
+    _host_public_net: >-
+      {{
+        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name][item]
+      }}
   ansible.builtin.shell: |
     set -o pipefail
-    ceph orch host add {{ item.key }} {{ item.value }} --labels {{ _labels }}
-    touch _log_file
+    ceph orch host add {{ item }} {{ _host_public_net }} --labels {{ _labels }}
+    touch {{ _log_file }}
   creates: "{{ _log_file }}"
-  loop: "{{ _host_map | dict2items }}"
+  loop: >-
+    {{
+      neerali_systems_provisioned |
+      selectattr('cluster', 'equalto', neerali_ceph_cluster_name) |
+      map(attribute='name')
+    }}
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ item }}"
