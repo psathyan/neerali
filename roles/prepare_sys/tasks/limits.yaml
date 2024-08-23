@@ -24,6 +24,7 @@
     value: unlimited
 
 - name: Ensure the right ulimit value
+  become: true
   when:
     - neerali_prepare_sys_ulimit
     - ansible_user_id != 'root'
