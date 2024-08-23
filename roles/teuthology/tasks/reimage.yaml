@@ -27,11 +27,11 @@
 - name: Reimage the nodes
   vars:
     _cmd: "{{ neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
-    _log_file: "{{ neerali_teuthology_logdir }}/reimage.log"
+    _log_file: "{{ neerali_teuthology_logdir }}/reimage.success"
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      {{ _cmd }} {{ item }} --owner {{ neerali_teuthology_reimage_owner }} |
+      {{ _cmd }} {{ item }} --owner {{ neerali_teuthology_reimage_owner }}
       tee {{ _log_file }}
     creates: "{{ _log_file }}"
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
