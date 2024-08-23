@@ -20,7 +20,7 @@
     _neerali_teuthology_reimage_nodes: >-
       {{
         neeral_systems_layout.baremetal |
-        selectattr('driver', 'equalto', 'teuthology')
+        selectattr('driver', 'equalto', 'teuthology') |
         neerali.general.get_reimage_nodes
       }}
 
