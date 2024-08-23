@@ -66,6 +66,7 @@
         name: "{{ item.name }}"
         groups: "{{ item.roles }} + ['nodes']"
         ansible_host: "{{ item.ansible_host }}"
+        ansible_user: "ubuntu"
         neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
       loop: "{{ _hosts }}"
       loop_control:
