@@ -15,6 +15,18 @@
 # under the License.
 
 
-- name: Cleaning up
-  ansible.builtin.debug:
-    msg: "ceph should cleanup."
+- name: Disable ceph orchestration  # noqa no-changed-when
+  become: true
+  ansible.builtin.command:
+    cmd: ceph mgr module disable cephadm
+
+- name: Gather the fsid of the cluster  # noqa no-changed-when
+  become: true
+  ansible.builtin.command:
+    cmd: ceph fsid
+  register: _ceph_fsid
+
+- name: Remove the cluster  # noqa no-changed-when
+  become: true
+  ansible.builtin.command:
+    cmd: cephadm rm-cluster --force --zap-osds --fsid {{ _ceph_fsid.stdout }}
