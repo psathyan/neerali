@@ -19,7 +19,7 @@
   ansible.builtin.set_fact:
     _bootstrap_args: >-
       {{
-        neerali_ceph_config[neerali_cluster_name]['bootstrap_config'] |
+        neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config'] |
         default({})
       }}
 
@@ -30,7 +30,7 @@
         _bootstrap_args |
         combine(
           {
-            'mon-ip': neerali_ceph_nodes_public_ips[neerali_cluster_name][inventory_hostname]
+            'mon-ip': neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name][inventory_hostname]
           }
         )
       }}
