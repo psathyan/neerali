@@ -20,7 +20,8 @@
     _bootstrap_args: >-
       {{
         neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config'] |
-        default({})
+        default({}) |
+        rejectattr('image', 'defined')
       }}
 
 - name: Insert the monitor ip address
@@ -42,17 +43,20 @@
 - name: Running minimal bootstrap
   vars:
     _args: "{{ _bootstrap_args | neerali.general.dict2args }}"
+    _final_args: >-
+      {{
+        neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['image'] is defined |
+        ternary(
+          '--image ' ~
+          neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['image'] ~
+          'bootstrap' ~ 
+          _args,
+          'bootstrap ' ~ _args
+        )
+      }}
   ansible.builtin.shell: 
     cmd: |
       set -euxo pipefail
-      cephadm shell {{ _args }}
+      cephadm {{ _final_args }}
       touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
     creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
-  register: _bootstrap_result
-
-- name: Assert the minimal bootstrap was successful
-  when:
-    - _bootstrap_result is changed
-  ansible.builtin.assert:
-    that:
-      - _bootstrap_result.rc == 0
