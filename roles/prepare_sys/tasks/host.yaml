@@ -30,7 +30,8 @@
     neerali_ceph_nodes_public_ips: >-
       {% set _data = {}                                                                  -%}
       {% for _node in hostvars                                                           -%}
-      {%     set _ips = _node['all_ipv4_addresses'] + _node['all_ipv6_addresses']        -%}
+      {%     set _ips = _node['ansible_all_ipv4_addresses'] + 
+                        _node['ansible_all_ipv6_addresses']                              -%}
       {%     set _clust_name = hostvars[_node]['neerali_ceph_cluster_name']              -%}
       {%     for _ip in _ips                                                             -%}
       {%         if _ip is ansible.utils.in_network neerali_ceph_public_network          -%}
