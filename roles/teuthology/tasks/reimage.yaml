@@ -27,12 +27,12 @@
 - name: Reimage the nodes
   vars:
     _cmd: "{{ neerali_teuthology_artifactdir }}/venv/bin/teuthology-reimage"
-    _log_file: "{{ neerali_teuthology_logdir }}/reimage_{{ _index }}.log"
+    _log_file: "{{ neerali_teuthology_logdir }}/reimage_{{ _index }}.success"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      {{ _cmd }} --owner {{ neerali_teuthology_reimage_owner }} {{ item }} | \
-          tee {{ _log_file }}
+      {{ _cmd }} --owner {{ neerali_teuthology_reimage_owner }} {{ item }}
+      touch {{ _log_file }}
     creates: "{{ _log_file }}"
   register: _reimage_results
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
@@ -41,6 +41,8 @@
     index_var: _index
 
 - name: Assert reimage results
+  when:
+    - _reimage_results is changed
   ansible.builtin.assert:
     that:
       - item.rc == 0
