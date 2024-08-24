@@ -35,9 +35,13 @@
       {%     set _clust_name = hostvars[_node]['neerali_ceph_cluster_name']              -%}
       {%     for _ip in _ips                                                             -%}
       {%         if _ip is ansible.utils.in_network neerali_ceph_public_network          -%}
-      {%-            set _ = _data | combine(
-                               {_clust_name:{hostvars[_node]['ansible_hostname']: _ip}},
-                               recursive=true)                                           -%}
+      {%             if _clust_name in _data                                             -%}
+      {%                 set _ = _data[_clust_name].update(
+                                 {hostvars[_node]['ansible_hostname']: _ip})             -%}
+      {%             else                                                                -%}
+      {%                 set _ = _data.update({_clust_name:
+                                 {hostvars[_node]['ansible_hostname']: _ip}})            -%}
+      {%             endif                                                               -%}
       {%         endif                                                                   -%}
       {%     endfor                                                                      -%}
       {% endfor                                                                          -%}
