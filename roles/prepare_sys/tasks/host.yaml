@@ -53,8 +53,8 @@
     path: "/etc/hosts"
     marker: "#-- {mark} neerali ceph nodes --"
     block: |
-      {% for _clust in neerali_ceph_nodes_public_ips                          -%}
-      {%     for _k, _v in neerali_ceph_nodes_public_ips[_clust].iteritems()  -%}
+      {% for _clust in neerali_ceph_nodes_public_ips                      -%}
+      {%     for _k, _v in neerali_ceph_nodes_public_ips[_clust].items()  -%}
       {{ _v }}  {{ _k }}
-      {%     endfor                                                           -%}
-      {% endfor                                                               -%}
+      {%     endfor                                                       -%}
+      {% endfor                                                           -%}
