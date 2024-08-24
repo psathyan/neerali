@@ -49,7 +49,7 @@
         ternary(
           '--image ' ~
           neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['image'] ~
-          'bootstrap' ~ 
+          ' bootstrap ' ~ 
           _args,
           'bootstrap ' ~ _args
         )
