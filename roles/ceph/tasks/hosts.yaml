@@ -16,7 +16,7 @@
 
 
 - name: Add the identified hosts to the cluster
-  var:
+  vars:
     _log_file: "{{ neerali_ceph_logdir }}/add_host_{{ item }}.success"
     _labels: >-
       {{
@@ -34,7 +34,8 @@
   ansible.builtin.shell: 
     cmd: |
       set -euxo pipefail
-      ceph orch host add {{ item }} {{ _host_public_net }} --labels {{ _labels }}
+      ceph orch host add {{ item }} {{ _host_public_net }} --labels {{ _labels }} | \
+        tee {{ neerali_ceph_logdir }}/add_host_{{ item }}.log
       touch {{ _log_file }}
     creates: "{{ _log_file }}"
   loop: >-
