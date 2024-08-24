@@ -33,21 +33,41 @@
       register: _spec_files
 
     - name: Apply the spec file
-      ansible.builtin.shell: |
-        set -o pipefail
-        ceph orch apply -i {{ item.dest }}
-        touch {{ neerali_ceph_logdir }}/osd_{{ _index }}.success
-      creates: "{{ neerali_ceph_logdir }}/osd_{{ _index }}.success"
+      ansible.builtin.shell: 
+        cmd: |
+          set -euxo pipefail
+          ceph orch apply -i {{ item.dest }}
+          touch {{ neerali_ceph_logdir }}/osd_{{ _index }}.success
+        creates: "{{ neerali_ceph_logdir }}/osd_{{ _index }}.success"
       loop: "{{ _spec_files.results }}"
       loop_control:
         index_var: _index
         label: "{{ item.dest }}"
+      register: _apply_spec_results
+
+    - name: Ensure the spec files have been applied.
+      when: _apply_spec_results is changed
+      ansible.builtin.assert:
+        that:
+          - item.rc == 0
+      loop: "{{ _apply_spec_results.results }}"
 
 - name: Create ceph object storage device without spec files
   when:
     - neerali_ceph_config.osd_config.options is defined
-  ansible.builtin.shell: |
-    set -o pipefail
-    ceph orch apply {{ neerali_ceph_config.osd_config.option }}
-    touch {{ neerali_ceph_logdir }}/osd.success
-  creates: "{{ neerali_ceph_logdir }}/osd.success"
+  block:
+    - name: Execute OSD apply command
+      ansible.builtin.shell: 
+        cmd: |
+          set -euxo pipefail
+          ceph orch apply {{ neerali_ceph_config.osd_config.option }}
+          touch {{ neerali_ceph_logdir }}/osd.success
+        creates: "{{ neerali_ceph_logdir }}/osd.success"
+      register: _osd_cmd_result
+
+    - name: Ensure the OSD command has applied correctly
+      when:
+        - _osd_cmd_result is changed
+      ansible.builtin.assert:
+        that:
+          - _osd_cmd_result.rc == 0
