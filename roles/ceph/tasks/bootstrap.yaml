@@ -35,7 +35,6 @@
         )
       }}
 
-# ToDo: Add support for custom arguments for multi cluster
 - name: Debug arguments passed to bootstrap
   ansible.builtin.debug:
     var: _bootstrap_args
@@ -43,8 +42,17 @@
 - name: Running minimal bootstrap
   vars:
     _args: "{{ _bootstrap_args | neerali.general.dict2args }}"
-  ansible.builtin.shell: |
-    set -xuo pipefail
-    cephadm shell {{ _args }}
-    touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
-  creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
+  ansible.builtin.shell: 
+    cmd: |
+      set -euxo pipefail
+      cephadm shell {{ _args }}
+      touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
+    creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
+  register: _bootstrap_result
+
+- name: Assert the minimal bootstrap was successful
+  when:
+    - _bootstrap_result is changed
+  ansible.builtin.assert:
+    that:
+      - _bootstrap_result.rc == 0
