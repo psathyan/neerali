@@ -36,7 +36,7 @@
       {%     for _ip in _ips                                                             -%}
       {%         if _ip is ansible.utils.in_network neerali_ceph_public_network          -%}
       {%-            set _ = _data | combine(
-                               {_clust_name:{hostvars[_node]['hostname']: _ip}},
+                               {_clust_name:{hostvars[_node]['ansible_hostname']: _ip}},
                                recursive=true)                                           -%}
       {%         endif                                                                   -%}
       {%     endfor                                                                      -%}
