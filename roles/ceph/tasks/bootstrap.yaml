@@ -57,6 +57,13 @@
   ansible.builtin.shell: 
     cmd: |
       set -euxo pipefail
-      cephadm {{ _final_args }}
+      cephadm {{ _final_args }} | tee {{ neerali_ceph_logdir }}/minimal_bootstrap.log
       touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
     creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
+  register: _bootstrap_result
+
+- name: Debug the bootstrap output
+  when:
+    - _bootstrap_result is changed
+  ansible.builtin.debug:
+    var: _bootstrap_result.stdout
