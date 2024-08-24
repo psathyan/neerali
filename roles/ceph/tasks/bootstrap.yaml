@@ -21,7 +21,7 @@
       {{
         neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config'] |
         default({}) |
-        rejectattr('image', 'defined')
+        ansible.utils.remove_keys('image')
       }}
 
 - name: Insert the monitor ip address
