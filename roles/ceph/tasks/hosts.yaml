@@ -15,6 +15,28 @@
 # under the License.
 
 
+- name: Add ceph's public key to all nodes participating in the cluster
+  become: true
+  when:
+    - >-
+      neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['ssh-public-key']
+      is not defined
+  vars:
+    _hosts_hosts: >-
+      {{
+        neerali_ceph_public_ips[neerali_ceph_cluster_name] |
+        dict2items |
+        map(attribute='key')
+      }}
+  ansible.posix.authorized_key:
+    key: "/etc/ceph/ceph.pub"
+    user: root
+    state: present
+  delegate_to: "{{ item }}"
+  loop: "{{ _hosts_hosts }}"
+  loop_control:
+    label: "{{ item }}"
+
 - name: Add the identified hosts to the cluster
   vars:
     _log_file: "{{ neerali_ceph_logdir }}/add_host_{{ item }}.success"
