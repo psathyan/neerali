@@ -15,20 +15,12 @@
 # under the License.
 
 
-- name: Prepare the argument map
+- name: Gather the bootstrap CLI arguments
   ansible.builtin.set_fact:
     _bootstrap_args: >-
       {{
         neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config'] |
         default({}) |
-        ansible.utils.remove_keys('image')
-      }}
-
-- name: Insert the monitor ip address
-  ansible.builtin.set_fact:
-    _bootstrap_args: >-
-      {{
-        _bootstrap_args |
         combine(
           {
             'mon-ip': neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name][inventory_hostname]
@@ -42,28 +34,24 @@
 
 - name: Running minimal bootstrap
   vars:
-    _args: "{{ _bootstrap_args | neerali.general.dict2args }}"
-    _final_args: >-
+    _args: "{{ (_bootstrap_args | default({})) | neerali.general.dict2args }}"
+    _cargs: >-
       {{
-        neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['image'] is defined |
-        ternary(
-          '--image ' ~
-          neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['image'] ~
-          ' bootstrap ' ~ 
-          _args,
-          'bootstrap ' ~ _args
-        )
+        neerali_ceph_config[neerali_ceph_cluster_name]['cephadm_config'] |
+        default({}) |
+        neerali.general.dict2args
       }}
-  ansible.builtin.shell: 
+  ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      cephadm {{ _final_args }} | tee {{ neerali_ceph_logdir }}/minimal_bootstrap.log
+      cephadm {{ _cargs }} bootstrap {{ _args }} | \
+          tee {{ neerali_ceph_logdir }}/minimal_bootstrap.log
       touch {{ neerali_ceph_logdir }}/minimal_bootstrap.success
     creates: "{{ neerali_ceph_logdir }}/minimal_bootstrap.success"
   register: _bootstrap_result
 
 - name: Debug the bootstrap output
   when:
-    - _bootstrap_result is changed
+    - _bootstrap_result.stdout is defined
   ansible.builtin.debug:
     var: _bootstrap_result.stdout
