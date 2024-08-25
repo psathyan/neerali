@@ -55,16 +55,50 @@
     content: |
       {{ neerali_prepare_sys_user }}  ALL=(root)  NOPASSWD: ALL
 
-- name: Add SSH key to authorized
+- name: Add to authorized key for user
   become: true
   ansible.posix.authorized_key:
     key: "{{ neerali_ssh_key.public_key }}"
     user: "{{ neerali_prepare_sys_user }}"
     state: present
 
-- name: Add SSH key to root
+- name: Add to authorized key for root
   become: true
   ansible.posix.authorized_key:
     key: "{{ neerali_ssh_key.public_key }}"
     user: root
     state: present
+
+- name: Add to authorized keys for root
+  become: true
+  when:
+    - neerali_ssh_key.public_keys is defined
+  ansible.posix.authorized_key:
+    key: "{{ item }}"
+    user: root
+    state: present
+  loop: "{{ neerali_ssh_key.public_keys }}"
+
+- name: Add SSH private key
+  become: true
+  when:
+    - neerali_ssh_key.private_key is defined
+  ansible.builtin.copy:
+    content: "{{ neerali_ssh_key.private_key }}"
+    dest: "/root/.ssh/neerali_acccess"
+    owner: root
+    group: root
+    mode: "0400"
+  delegate_to: _admin
+
+- name: Add SSH private key
+  become: true
+  when:
+    - neerali_ssh_key.private_key is defined
+  ansible.builtin.copy:
+    content: "{{ neerali_ssh_key.private_key }}"
+    dest: "/root/.ssh/neerali_acccess.pub"
+    owner: root
+    group: root
+    mode: "0600"
+  delegate_to: _admin
