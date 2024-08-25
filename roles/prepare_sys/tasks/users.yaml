@@ -89,16 +89,22 @@
     owner: root
     group: root
     mode: "0400"
-  delegate_to: _admin
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['_admin'] }}"
+  loop_control:
+    label: "{{ item }}"
 
-- name: Add SSH private key
+- name: Add SSH public key
   become: true
   when:
-    - neerali_ssh_key.private_key is defined
+    - neerali_ssh_key.public_key is defined
   ansible.builtin.copy:
-    content: "{{ neerali_ssh_key.private_key }}"
+    content: "{{ neerali_ssh_key.public_key }}"
     dest: "/root/.ssh/neerali_acccess.pub"
     owner: root
     group: root
     mode: "0600"
-  delegate_to: _admin
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['_admin'] }}"
+  loop_control:
+    label: "{{ item }}"
