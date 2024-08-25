@@ -41,3 +41,7 @@
 - name: Add hosts to the cluster
   ansible.builtin.include_tasks:
     file: hosts.yaml
+
+- name: Deploy OSD
+  ansible.builtin.include_tasks:
+    file: osd.yaml
