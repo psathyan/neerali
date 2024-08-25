@@ -16,7 +16,7 @@
 
 
 - name: Set the custom images in Ceph's mgr
-  ansible.builtin.shell: 
+  ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
       ceph config set mgr mgr/cephadm/container_image_{{ item.key }} {{ item.value }}
@@ -29,12 +29,3 @@
     }}
   loop_control:
     label: "{{ item.key }}"
-  register: _custom_image_results
-
-- name: Ensure the image additional was successful
-  when:
-    - _custom_image_results is changed
-  ansible.builtin.assert:
-    that:
-      - item.rc == 0
-  loop: "{{ _custom_image_results.results }}"
