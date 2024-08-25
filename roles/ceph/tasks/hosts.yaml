@@ -31,7 +31,7 @@
       {{
         neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name][item]
       }}
-  ansible.builtin.shell: 
+  ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
       ceph orch host add {{ item }} {{ _host_public_net }} --labels {{ _labels }} | \
@@ -47,12 +47,3 @@
     }}
   loop_control:
     label: "{{ item }}"
-  register: _host_add_results
-
-- name: Ensure the host addition is successful.
-  when:
-    - _host_add_results is changed
-  ansible.builtin.assert:
-    that:
-      - item.rc == 0
-  loop: "{{ _host_add_results.results }}"
