@@ -31,22 +31,14 @@
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      {{ _cmd }} --owner {{ neerali_teuthology_reimage_owner }} {{ item }}
+      {{ _cmd }} --owner {{ neerali_teuthology_reimage_owner }} {{ item }} | \
+        tee {{ neerali_teuthology_logdir }}/reimage_{{ _index }}.log
       touch {{ _log_file }}
     creates: "{{ _log_file }}"
-  register: _reimage_results
   loop: "{{ _neerali_teuthology_reimage_nodes }}"
   loop_control:
     label: "{{ item }}"
     index_var: _index
-
-- name: Assert reimage results
-  when:
-    - _reimage_results is changed
-  ansible.builtin.assert:
-    that:
-      - item.rc == 0
-  loop: "{{ _reimage_results.results }}"
 
 - name: Post reimage tasks
   vars:
