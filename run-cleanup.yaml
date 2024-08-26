@@ -1,0 +1,72 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Requires the admin nodes and the controller node for execution. The
+# controller node is required as it is the one that has SSH access to all the
+# nodes participating in any cluster.
+
+
+- name: Cleanup the test environment
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Gather the ceph fsid
+      become: true
+      when: inventory_hostname != 'localhost'
+      ansible.builtin.command:
+        cmd: "ceph fsid"
+      changed_when: false
+      register: _ceph_fsid
+
+    - name: Gather the hosts participating in the cluster
+      become: true
+      when: inventory_hostname != 'localhost'
+      ansible.builtin.command:
+        cmd: "ceph orch host ls --format json"
+      register: _ceph_hosts
+      changed_when: false
+
+    - name: Disable ceph orchestration
+      when: inventory_hostname != 'localhost'
+      ansible.builtin.command:
+        cmd: ceph mgr module disable cephadm
+      changed_when: false
+
+    - name: Purge the ceph cluster
+      when: inventory_hostname == 'localhost'
+      vars:
+        _fsid: "{{ _ceph_fsid.stdout | trim }}"
+        _hosts: >-
+          {{
+            _ceph_hosts.stdout |
+            ansible.builtin.split('\n') |
+            join(' ')
+          }}
+      ansible.builtin.shell:
+        cmd: |
+          set -euxo pipefail
+          for _host in {{ _hosts }}; do
+              sudo dnf install -y cephadm
+              ssh ${_host} cephadm rm-cluster --zap-osds --fsid {{ _fsid }}
+          done
+          touch /tmp/{{ _fsid }}.purged
+        creates: "/tmp/{{ _fsid }}.purged"
+
+    - name: Ensure the directory does not exist
+      ansible.builtin.file:
+        src: "{{ ansible_user_dir ~ '/neerali-data' }}"
+        state: absent
