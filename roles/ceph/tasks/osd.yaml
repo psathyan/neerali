@@ -44,6 +44,14 @@
         index_var: _index
         label: "{{ item.dest }}"
 
+    - name: Wait until all OSD spec files are applied
+      vars:
+        _osd_spec: "{{ item | ansible.builtin.from_yaml }}"
+        service_id: "{{ _osd_spec['service_id'] }}"
+      ansible.builtin.include_tasks:
+        file: osd_wait_until.yaml
+      loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['content'] }}"
+
 - name: Create ceph object storage device without spec files
   when:
     - neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['options'] is defined
@@ -55,3 +63,9 @@
           ceph orch apply {{ neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['options'] }}
           touch {{ neerali_ceph_logdir }}/osd.success
         creates: "{{ neerali_ceph_logdir }}/osd.success"
+
+    - name: Wait until OSDs are created
+      vars:
+        service_id: "all-available-devices"
+      ansible.builtin.include_tasks:
+        file: osd_wait_until.yaml
