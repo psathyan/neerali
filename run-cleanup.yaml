@@ -41,6 +41,7 @@
       changed_when: false
 
     - name: Disable ceph orchestration
+      become: true
       when: inventory_hostname != 'localhost'
       ansible.builtin.command:
         cmd: ceph mgr module disable cephadm
