@@ -28,6 +28,7 @@
     baseurl: "{{ item.baseurl }}"
     enabled: "{{ item.enabled | default(true) | bool }}"
     gpgcheck: "{{ item.gpgcheck | default(false) | bool }}"
+    gpgkey: "{{ item.gpgkey | default(omit) }}"
   loop: "{{ neerali_repo_setup_repos }}"
   loop_control:
     label: "{{ item.name }}"
