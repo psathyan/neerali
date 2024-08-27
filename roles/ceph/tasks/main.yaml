@@ -38,6 +38,12 @@
   ansible.builtin.include_tasks:
     file: custom_image.yaml
 
+- name: Apply the cluster configuration
+  when:
+    - neerali_ceph_config[neerali_ceph_cluster_name]['conf'] is defined
+  ansible.builtin.include_tasks:
+    file: conf.yaml
+
 - name: Add hosts to the cluster
   ansible.builtin.include_tasks:
     file: hosts.yaml

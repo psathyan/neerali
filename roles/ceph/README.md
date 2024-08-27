@@ -1,11 +1,14 @@
 # ceph
+
 This role installs and configures Ceph storage. The role reads the configuration
 information under the each cluster name / location.
 
 ## Privilege escalation
+
 Yes, privileged access is required for installing ceph.
 
 ## Parameters
+
 * `neerali_ceph_cluster_name` (str) defaults to `ceph`, name of the cluster
   location.
 * `neerali_ceph_config` (dict) is the primary source of configuration. The keys
@@ -14,6 +17,7 @@ Yes, privileged access is required for installing ceph.
   [section](#supported-keys-for-ceph-config)
 
 ### Supported keys for ceph config
+
 * `public_network` (str) public network CIDR
 * `bootstrap_config` (dict) key value pairs as supported by cephadm bootstrap.
   Refer [link](https://docs.ceph.com/en/latest/man/8/cephadm/#bootstrap) for
@@ -27,8 +31,10 @@ Yes, privileged access is required for installing ceph.
 * `osd_config` (dict) supports `options | content` keys. `options` holds a
   string that can be directly passed to the orchestrator. Whereas `content` is
   a list of spec file contents that needs to be applied.
+* `conf` (dict) cluster configuration or tuning parameters.
 
 #### Example for passing additional bootstrap arguments
+
 ```YAML
 neerali_ceph_config:
   ceph:
@@ -38,6 +44,7 @@ neerali_ceph_config:
 ```
 
 #### Example for overriding default images
+
 ```YAML
 neerali_ceph_config:
   ceph:
