@@ -1,12 +1,15 @@
 # prepare_sys
+
 The purpose of this role is to prepare the system for Ceph deployment. It performs
 installing the required packages and configuring the system.
 
 ## Privilege escalation
+
 Yes, privileged access is required as the tasks performed are related to package
 install. Along with system configuration.
 
 ## Parameters
+
 * `neerali_prepare_sys_ulimit` (bool) defaults to `false`. Sets the ulimit to
   unlimited for the non-root user.
 * `neerali_prepare_sys_packages_extra` (list) defaults to `[]`. Additional
@@ -20,6 +23,19 @@ install. Along with system configuration.
   Defaults to `cephuser`
 * `neerali_prepare_sys_dtrs` (list) defaults to `[]`. The elements are maps
   holding information to access Docker / Container registeries.
+* `neerali_prepare_sys_sysctl_conf` (dict) holds the kernel tunable parameters
+  that needs to be applied on the systems.
 
 ## Examples
-Add samples on using the role.
+
+Some the values that are used
+
+```yaml
+neerali_prepare_sys_ulimit: true
+neerali_prepare_sys_dtrs:
+  - username: service-account
+    password: "<masked>"
+    registry: quay.io
+neerali_prepare_sys_packages_extra:
+  - docker
+```
