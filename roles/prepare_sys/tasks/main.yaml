@@ -24,6 +24,7 @@
         (neerali_prepare_sys_packages_extra | default([]) )
       }}
     state: present
+  environment: "{{ neerali_prepare_sys_packages_env | default(omit) }}"
 
 - name: Ensure time sync exists
   ansible.builtin.include_tasks:
