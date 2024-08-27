@@ -34,6 +34,12 @@
   ansible.builtin.include_tasks:
     file: sshd.yaml
 
+- name: Ensure the required system parameters are tuned
+  when:
+    - neerali_prepare_sys_systcl_conf is defined
+  ansible.builtin.include_tasks:
+    file: sysctl.yaml
+
 - name: Ensure the correct PAM limits are configured.
   ansible.builtin.include_tasks:
     file: limits.yaml

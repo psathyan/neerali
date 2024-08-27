@@ -38,4 +38,7 @@ neerali_prepare_sys_dtrs:
     registry: quay.io
 neerali_prepare_sys_packages_extra:
   - docker
+neerali_prepare_sys_sysctl_conf:
+  'net.ipv6.conf.all.disable_ipv6': 1
+  'vm.min_free_kbytes': 968578
 ```
