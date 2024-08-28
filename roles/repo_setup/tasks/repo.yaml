@@ -29,6 +29,10 @@
     enabled: "{{ item.enabled | default(true) | bool }}"
     gpgcheck: "{{ item.gpgcheck | default(false) | bool }}"
     gpgkey: "{{ item.gpgkey | default(omit) }}"
-  loop: "{{ neerali_repo_setup_repos }}"
+  loop: >-
+    {{
+      neerali_repo_setup_repos +
+      (neerali_repo_setup_repos_extras | default([]))
+    }}
   loop_control:
     label: "{{ item.name }}"

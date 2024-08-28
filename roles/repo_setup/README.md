@@ -14,8 +14,9 @@ Yes, privileged access is required for the role to run successfully.
 * `neerali_repo_setup_remove_repo_files` (bool) defaults to false. When enabled
   clears the all files found in `/etc/yum.repos.d/` directory.
 * `neerali_repo_setup_repos` (list) contains a map that has information about
-  the repositories to be enabled. The supported keys for the items in the list
-  are [section](#supported-keys-by-neerali_repo_setup_repos).
+  the repositories to be enabled. Additional repos can be passed via the var
+  `neerali_repo_setup_repos_extras`. The supported keys for the items in the
+  list are [section](#supported-keys-by-neerali_repo_setup_repos).
 * `neerali_repo_setup_os_update` (bool) defaults to `true`, updates the system
   when subscription manager and/or repos are configured.
 
