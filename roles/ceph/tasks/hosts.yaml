@@ -18,7 +18,7 @@
 - name: Add ceph's public key to all nodes participating in the cluster
   when:
     - >-
-      neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config']['ssh-public-key']
+      neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap']['ssh-public-key']
       is not defined
   vars:
     _hosts_hosts: >-
