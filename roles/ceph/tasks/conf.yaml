@@ -23,6 +23,6 @@
         combine(neerali_ceph_config_patch.custom_images | default({}), recursive=true)
       }}
   ansible.builtin.command:
-    cmd: "{{ item }}"
+    cmd: "ceph {{ item }}"
   changed_when: false
   loop: "{{ _conf_data | neerali.general.conf2cmds }}"
