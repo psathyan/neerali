@@ -22,7 +22,14 @@
         neerali_ceph_config[neerali_ceph_cluster_name]['conf'] |
         combine(neerali_ceph_config_patch.custom_images | default({}), recursive=true)
       }}
-  ansible.builtin.command:
-    cmd: "ceph {{ item }}"
-  changed_when: false
+    _log_file: >-
+      {{
+        neerali_ceph_logdir ~ '/' ~ (item | replace(' ', '')) ~ '.success'
+      }}
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      ceph {{ item }}
+      touch {{ _log_file }}
+    creates: "{{ _log_file }}"
   loop: "{{ _conf_data | neerali.general.conf2cmds }}"
