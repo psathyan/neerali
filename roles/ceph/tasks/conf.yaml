@@ -15,7 +15,6 @@
 # under the License.
 
 
-
 - name: Ensure cluster configuration
   vars:
     _conf_data: >-
