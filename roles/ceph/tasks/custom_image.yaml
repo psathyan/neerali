@@ -22,10 +22,6 @@
       ceph config set mgr mgr/cephadm/container_image_{{ item.key }} {{ item.value }}
       touch {{ neerali_ceph_logdir }}/{{ item.key }}.success
     creates: "{{ neerali_ceph_logdir }}/{{ item.key }}.success"
-  loop: >-
-    {{
-      neerali_ceph_config[neerali_ceph_cluster_name]['custom_images'] |
-      dict2items
-    }}
+  loop: "{{ neerali_ceph_container_images | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
