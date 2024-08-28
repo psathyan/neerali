@@ -15,18 +15,18 @@
 # under the License.
 
 
-# Required variable is service_id
+# Required variables are service-type and service-id
 - name: Wait until OSDs are created  # noqa no-changed-when
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      ceph orch ls --service-type osd \
-          --service-name osd.{{ service_id }} \
+      ceph orch ls --service-type {{ service_type }} \
+          --service-name {{ service_id }} \
           --format json | \
           jq '.[0].status | select( .size !=0 ) | .size == .running'
-  register: _osd_status
+  register: _status
   until: >-
-    _osd_status.stdout is defined and
-    _osd_status.stdout == "true"
-  delay: 10
-  retries: 6
+    _status.stdout is defined and
+    _status.stdout == "true"
+  delay: "{{ sleep_time | default(10) }}"
+  retries: "{{ retry_count | default(6) }}"

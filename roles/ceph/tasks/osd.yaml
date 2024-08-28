@@ -47,9 +47,10 @@
     - name: Wait until all OSD spec files are applied
       vars:
         _osd_spec: "{{ item | ansible.builtin.from_yaml }}"
-        service_id: "{{ _osd_spec['service_id'] }}"
+        service_id: "osd.{{ _osd_spec['service_id'] }}"
+        service_type: osd
       ansible.builtin.include_tasks:
-        file: osd_wait_until.yaml
+        file: wait_until.yaml
       loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['specs'] }}"
 
 - name: Create ceph object storage device without spec files
@@ -67,5 +68,6 @@
     - name: Wait until OSDs are created
       vars:
         service_id: "all-available-devices"
+        service_type: osd
       ansible.builtin.include_tasks:
-        file: osd_wait_until.yaml
+        file: wait_until.yaml
