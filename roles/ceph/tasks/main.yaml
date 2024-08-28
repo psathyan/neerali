@@ -34,7 +34,7 @@
 
 - name: Ensure expected component images
   when:
-    - neerali_ceph_config[neerali_ceph_cluster_name]['custom_images'] is defined
+    - neerali_ceph_container_images is defined
   ansible.builtin.include_tasks:
     file: custom_image.yaml
 
