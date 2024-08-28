@@ -19,7 +19,7 @@
   ansible.builtin.set_fact:
     _bootstrap_args: >-
       {{
-        neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap_config'] |
+        neerali_ceph_config[neerali_ceph_cluster_name]['bootstrap'] |
         default({}) |
         combine(
           {
@@ -37,7 +37,7 @@
     _args: "{{ (_bootstrap_args | default({})) | neerali.general.dict2args }}"
     _cargs: >-
       {{
-        neerali_ceph_config[neerali_ceph_cluster_name]['cephadm_config'] |
+        neerali_ceph_config[neerali_ceph_cluster_name]['cephadm'] |
         default({}) |
         neerali.general.dict2args
       }}
