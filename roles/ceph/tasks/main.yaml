@@ -51,3 +51,13 @@
 - name: Deploy OSD
   ansible.builtin.include_tasks:
     file: osd.yaml
+
+- name: Deploy NVMe-oF gateway
+  when:
+    - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] is defined
+    - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] | length > 0
+  vars:
+    gw_spec: "{{ item | ansible.builtin.from_yaml }}"
+  ansible.builtin.include_tasks:
+    file: gateway.yaml
+  loop: "{{ eerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] }}"

@@ -32,6 +32,8 @@ Yes, privileged access is required for installing ceph.
   can be directly passed to the orchestrator. Whereas `specs` is a list of spec
   file contents that needs to be applied.
 * `conf` (dict) cluster configuration or tuning parameters.
+* `nvmeof` (dict) supports `specs` key that is list of service spec file. Refer
+  [doc](https://docs.ceph.com/en/latest/rbd/nvmeof-target-configure/)
 
 #### Example for passing additional bootstrap arguments
 
@@ -41,6 +43,17 @@ neerali_ceph_config:
     bootstrap:
       cluster-network: 192.168.10.0/24
       ssh-user: zuul
+    nvmeof:
+      specs:
+        - |
+          ---
+          service_type: nvmeof
+          service_id: nvmeof_pool1
+          placement:
+            labels:
+              - nvemof_group1
+          spec:
+            pool: nvmeof_pool1
 ```
 
 #### Example for overriding default images

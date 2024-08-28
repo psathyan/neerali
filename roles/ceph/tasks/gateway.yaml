@@ -1,0 +1,79 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# The below set of tasks require gw_spec which is a dictionary
+
+
+- name: Create the OSD pool for the gateway group.
+  vars:
+    _log: >-
+      {{
+        neerali_ceph_logdir ~
+        '/pool-' ~
+        gw_spec['spec']['pool_name'] ~
+        '.success'
+      }}
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      ceph osd pool create {{ gw_spec['spec']['pool_name'] }}
+      touch {{ _log }}
+    creates: "{{ _log }}"
+
+- name: Enable RADOS block device application for the pool
+  vars:
+    _log: >-
+      {{
+        neerali_ceph_logdir ~
+        '/rbd-' ~
+        gw_spec['spec']['pool_name'] ~
+        '.success'
+      }}
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      rbd pool init {{ gw_spec['spec']['pool_name'] }}
+      touch {{ _log }}
+    creates: "{{ _log }}"
+
+- name: Copy the spec file
+  ansible.builtin.copy:
+    content: "{{ gw_spec }}"
+    dest: "{{ neerali_ceph_artifactsdir ~ '/' ~ gw_spec['service_id'] }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    mode: '0644'
+  register: _spec_file_result
+
+- name: Apply the NVMEof service spec file
+  vars:
+    _log: >-
+      {{
+        neerali_ceph_logdir ~ '/' ~ gw_spec['service_id'] ~ '.success'
+      }}
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      ceph orch apply -i {{ _spec_file_result.dest }}
+      touch {{ _log }}
+    creates: "{{ _log }}"
+
+- name: Wait until the spec file is created
+  vars:
+    service_type: nvmeof
+    service_name: "nvmeof.{{ gw_spec['service_id'] }}"
+  ansible.builtin.include_tasks:
+    file: wait_until.yaml
