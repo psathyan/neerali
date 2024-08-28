@@ -24,7 +24,10 @@
       }}
     _log_file: >-
       {{
-        neerali_ceph_logdir ~ '/' ~ (item | replace(' ', '')) ~ '.success'
+        neerali_ceph_logdir ~
+        '/' ~
+        (item | replace(' ', '') | replace(':', '') | replace('/', '')) ~
+        '.success'
       }}
   ansible.builtin.shell:
     cmd: |
