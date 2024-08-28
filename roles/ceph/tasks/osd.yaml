@@ -17,8 +17,8 @@
 
 - name: Create ceph object storage device using spec files
   when:
-    - neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['content'] is defined
-    - neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['content'] | length > 0
+    - neerali_ceph_config[neerali_ceph_cluster_name]['osd']['specs'] is defined
+    - neerali_ceph_config[neerali_ceph_cluster_name]['osd']['specs'] | length > 0
   block:
     - name: Ensure the spec exists
       ansible.builtin.copy:
@@ -27,7 +27,7 @@
         owner: "{{ ansible_user_id }}"
         group: "{{ ansible_user_gid }}"
         mode: '0644'
-      loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['content'] }}"
+      loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['specs'] }}"
       loop_control:
         index_var: _index
       register: _spec_files
@@ -50,17 +50,17 @@
         service_id: "{{ _osd_spec['service_id'] }}"
       ansible.builtin.include_tasks:
         file: osd_wait_until.yaml
-      loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['content'] }}"
+      loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['specs'] }}"
 
 - name: Create ceph object storage device without spec files
   when:
-    - neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['options'] is defined
+    - neerali_ceph_config[neerali_ceph_cluster_name]['osd']['options'] is defined
   block:
     - name: Execute OSD apply command
       ansible.builtin.shell:
         cmd: |
           set -euxo pipefail
-          ceph orch apply {{ neerali_ceph_config[neerali_ceph_cluster_name]['osd_config']['options'] }}
+          ceph orch apply {{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['options'] }}
           touch {{ neerali_ceph_logdir }}/osd.success
         creates: "{{ neerali_ceph_logdir }}/osd.success"
 
