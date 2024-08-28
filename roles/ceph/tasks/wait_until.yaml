@@ -15,13 +15,13 @@
 # under the License.
 
 
-# Required variables are service-type and service-id
-- name: Wait until OSDs are created  # noqa no-changed-when
+# Required variables are service_type and service_name
+- name: Wait until OSDs are created
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
       ceph orch ls --service-type {{ service_type }} \
-          --service-name {{ service_id }} \
+          --service-name {{ service_name }} \
           --format json | \
           jq '.[0].status | select( .size !=0 ) | .size == .running'
   register: _status
@@ -30,3 +30,4 @@
     _status.stdout == "true"
   delay: "{{ sleep_time | default(10) }}"
   retries: "{{ retry_count | default(6) }}"
+  changed_when: false

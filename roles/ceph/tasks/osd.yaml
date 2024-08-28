@@ -47,7 +47,7 @@
     - name: Wait until all OSD spec files are applied
       vars:
         _osd_spec: "{{ item | ansible.builtin.from_yaml }}"
-        service_id: "osd.{{ _osd_spec['service_id'] }}"
+        service_name: "osd.{{ _osd_spec['service_id'] }}"
         service_type: osd
       ansible.builtin.include_tasks:
         file: wait_until.yaml
@@ -67,7 +67,7 @@
 
     - name: Wait until OSDs are created
       vars:
-        service_id: "all-available-devices"
+        service_name: "osd.all-available-devices"
         service_type: osd
       ansible.builtin.include_tasks:
         file: wait_until.yaml
