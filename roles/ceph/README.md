@@ -33,7 +33,8 @@ Yes, privileged access is required for installing ceph.
   file contents that needs to be applied.
 * `conf` (dict) cluster configuration or tuning parameters.
 * `nvmeof` (dict) supports `specs` key that is list of service spec file. Refer
-  [doc](https://docs.ceph.com/en/latest/rbd/nvmeof-target-configure/)
+  [doc](https://docs.ceph.com/en/latest/rbd/nvmeof-target-configure/). Additionally,
+  supports `pg` and `pg_num` to be used for OSD pool create.
 
 #### Example for passing additional bootstrap arguments
 

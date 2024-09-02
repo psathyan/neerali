@@ -26,10 +26,21 @@
         gw_spec['spec']['pool_name'] ~
         '.success'
       }}
+    _pg: >-
+      {{
+        neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['pg'] |
+        default('')
+      }}
+    _pg_num: >-
+      {{
+        neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['pg_num'] |
+        default('')
+      }}
+    _pool_args: "{{ _pg }} {{ _pgn_num }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      ceph osd pool create {{ gw_spec['spec']['pool_name'] }}
+      ceph osd pool create {{ gw_spec['spec']['pool_name'] }} {{ _pool_args | trim }}
       touch {{ _log }}
     creates: "{{ _log }}"
 
