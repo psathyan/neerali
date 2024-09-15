@@ -32,9 +32,15 @@ Yes, privileged access is required for installing ceph.
   can be directly passed to the orchestrator. Whereas `specs` is a list of spec
   file contents that needs to be applied.
 * `conf` (dict) cluster configuration or tuning parameters.
-* `nvmeof` (dict) supports `specs` key that is list of service spec file. Refer
-  [doc](https://docs.ceph.com/en/latest/rbd/nvmeof-target-configure/). Additionally,
-  supports `pg` and `pg_num` to be used for OSD pool create.
+* `nvmeof` (dict) keys supported are describe [here](#supported-keys-of-nvmeof).
+
+### Supported keys of nvmeof
+
+* `specs` (list) list of service specifications as described in the documment
+  [1](https://docs.ceph.com/en/latest/rbd/nvmeof-target-configure/).
+* `pg` (int) The placement group allowed in a OSD device
+* `pg_num` (int) number of placement groups to be applied / changed.
+* `cli_image` (uri) absolute docker image to be used for creating the alias.
 
 #### Example for passing additional bootstrap arguments
 
