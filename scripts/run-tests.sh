@@ -28,5 +28,5 @@ fi
 
 echo "Begin test execution"
 podman run --name unit-test --rm \
-    --volume ${project_dir}:/home/ciuser/neerali:ro \
+    --volume ${project_dir}:/home/ciuser/neerali:Z \
     localhost/neerali-molecule  ${_test_exe} ${_suite}
