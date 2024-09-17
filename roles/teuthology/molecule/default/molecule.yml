@@ -39,3 +39,4 @@ provisioner:
                 - mon
               devices:
                 data_disks: []
+        neerali_teuthology_conf: {}
