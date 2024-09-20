@@ -23,7 +23,7 @@
       {{
         neerali_ceph_logdir ~
         '/pool-' ~
-        gw_spec['spec']['pool_name'] ~
+        gw_spec['spec']['pool'] ~
         '.success'
       }}
     _pg: >-
@@ -40,7 +40,7 @@
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      ceph osd pool create {{ gw_spec['spec']['pool_name'] }} {{ _pool_args | trim }}
+      ceph osd pool create {{ gw_spec['spec']['pool'] }} {{ _pool_args | trim }}
       touch {{ _log }}
     creates: "{{ _log }}"
 
@@ -50,13 +50,13 @@
       {{
         neerali_ceph_logdir ~
         '/rbd-' ~
-        gw_spec['spec']['pool_name'] ~
+        gw_spec['spec']['pool'] ~
         '.success'
       }}
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      rbd pool init {{ gw_spec['spec']['pool_name'] }}
+      rbd pool init {{ gw_spec['spec']['pool'] }}
       touch {{ _log }}
     creates: "{{ _log }}"
 
