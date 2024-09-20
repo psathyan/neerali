@@ -60,4 +60,4 @@
     gw_spec: "{{ item | ansible.builtin.from_yaml }}"
   ansible.builtin.include_tasks:
     file: gateway.yaml
-  loop: "{{ eerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] }}"
+  loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] }}"
