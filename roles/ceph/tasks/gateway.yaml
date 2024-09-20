@@ -36,7 +36,7 @@
         neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['pg_num'] |
         default('')
       }}
-    _pool_args: "{{ _pg }} {{ _pgn_num }}"
+    _pool_args: "{{ _pg }} {{ _pg_num }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
@@ -62,8 +62,11 @@
 
 - name: Copy the spec file
   ansible.builtin.copy:
-    content: "{{ gw_spec }}"
-    dest: "{{ neerali_ceph_artifactsdir ~ '/' ~ gw_spec['service_id'] }}"
+    content: "{{ gw_spec | ansible.builtin.to_yaml }}"
+    dest: >-
+      {{
+        neerali_ceph_artifactdir ~ '/' ~ gw_spec['service_id'] ~ '.yaml'
+      }}
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
     mode: '0644'
@@ -86,5 +89,6 @@
   vars:
     service_type: nvmeof
     service_name: "nvmeof.{{ gw_spec['service_id'] }}"
+    retry_count: 20
   ansible.builtin.include_tasks:
     file: wait_until.yaml

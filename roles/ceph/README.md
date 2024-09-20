@@ -57,8 +57,7 @@ neerali_ceph_config:
           service_type: nvmeof
           service_id: nvmeof_pool1
           placement:
-            labels:
-              - nvemof_group1
+            label: nvemof_group1
           spec:
             pool: nvmeof_pool1
 ```

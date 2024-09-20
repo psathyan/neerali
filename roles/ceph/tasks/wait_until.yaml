@@ -16,7 +16,7 @@
 
 
 # Required variables are service_type and service_name
-- name: Wait until OSDs are created
+- name: Wait until daemons are created
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
