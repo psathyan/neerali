@@ -19,7 +19,7 @@
   hosts: client
   gather_facts: false
 
-tasks:
+  tasks:
     - name: Placeholder for client configuration.
       ansible.builtin.debug:
         msg: "Temporary placeholder"
