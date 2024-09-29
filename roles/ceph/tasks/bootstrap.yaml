@@ -55,3 +55,17 @@
     - _bootstrap_result.stdout is defined
   ansible.builtin.debug:
     var: _bootstrap_result.stdout
+
+- name: Login to registry
+  when:
+    - neerali_ceph_cephadm_registry_login | default(false) | bool
+    - neerali_prepare_sys_dtrs | default(false)
+  vars:
+    _args: "{{ item | neerali.general.dict2args }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      cephadm registry-login {{ _args }}
+      touch {{ neerali_ceph_log_dir }}/{{ item.registry }}.success
+  creates: "{{ neerali_ceph_log_dir }}/{{ item.registry }}.success"
+  loop: "{{ neerali_prepare_sys_dtrs }}"
