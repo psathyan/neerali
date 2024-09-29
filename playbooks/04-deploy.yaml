@@ -14,29 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Tasks pertaining to preparing the test environment
-- name: Prepare the test environment
-  hosts: nodes
-  gather_facts: true
-
-  tasks:
-    - name: Create awareness to provisioned variables
-      vars:
-        _host: "{{ neerali_target_host | default('localhost') }}"
-      ansible.builtin.set_fact:
-        neerali_systems_provisioned: >-
-          {{
-            hostvars[_host]['neerali_systems_provisioned']
-          }}
-
-    - name: Configure repositories
-      ansible.builtin.include_role:
-        name: repo_setup
-
-    - name: Prepare the system for deployment
-      ansible.builtin.include_role:
-        name: prepare_sys
-
 # tasks pertaining to deploying of the cluster.
 - name: Deploy ceph
   hosts: _admin
@@ -45,9 +22,18 @@
   tasks:
     - name: Install cephadm package
       become: true
+      vars:
+        _package: >-
+          {{
+            ['cephadm', 'ibm-storage-ceph-license']
+            if neerali_ibm_build is defined
+            else
+            ['cephadm']
+          }}
       ansible.builtin.package:
-        name: cephadm
+        name: "{{ _package }}"
         state: present
+      environment: "{{ neerali_ibm_eula_accept | default(omit) }}"
 
     - name: Deploy ceph
       ansible.builtin.include_role:

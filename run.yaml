@@ -19,14 +19,20 @@
 - name: Build phase
   ansible.builtin.import_playbook: playbooks/01-build.yaml
 
-- name: Infrastructure provisioning phase
+- name: Provision the environment required for testing.
   ansible.builtin.import_playbook: playbooks/02-provision.yaml
 
-- name: Deployment of test environment
-  ansible.builtin.import_playbook: playbooks/03-deploy.yaml
+- name: Prepare the environment for deployment of ceph.
+  ansible.builtin.import_playbook: playbooks/03-prepare.yaml
 
-- name: Evaluation stage
-  ansible.builtin.import_playbook: playbooks/04-test.yaml
+- name: Deploy Storage Ceph
+  ansible.builtin.import_playbook: playbooks/04-deploy.yaml
 
-- name: Publishing stage
-  ansible.builtin.import_playbook: playbooks/05-publish.yaml
+- name: Configure the clients for testing.
+  ansible.builtin.import_playbook: playbooks/05-clients.yaml
+
+- name: Execute tests
+  ansible.builtin.import_playbook: playbooks/07-deploy.yaml
+
+- name: Publish the findings.
+  ansible.builtin.import_playbook: playbooks/09-publish.yaml
