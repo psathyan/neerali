@@ -32,7 +32,7 @@
   ansible.builtin.import_playbook: playbooks/05-clients.yaml
 
 - name: Execute tests
-  ansible.builtin.import_playbook: playbooks/07-deploy.yaml
+  ansible.builtin.import_playbook: playbooks/07-test.yaml
 
 - name: Publish the findings.
   ansible.builtin.import_playbook: playbooks/09-publish.yaml
