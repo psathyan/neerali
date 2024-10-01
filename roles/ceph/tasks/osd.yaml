@@ -61,7 +61,7 @@
       ansible.builtin.shell:
         cmd: |
           set -euxo pipefail
-          ceph orch apply {{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['options'] }}
+          ceph orch apply osd {{ neerali_ceph_config[neerali_ceph_cluster_name]['osd']['options'] }}
           touch {{ neerali_ceph_logdir }}/osd.success
         creates: "{{ neerali_ceph_logdir }}/osd.success"
 

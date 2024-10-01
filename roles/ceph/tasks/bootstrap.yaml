@@ -67,5 +67,5 @@
       set -euxo pipefail
       cephadm registry-login {{ _args }}
       touch {{ neerali_ceph_log_dir }}/{{ item.registry }}.success
-  creates: "{{ neerali_ceph_log_dir }}/{{ item.registry }}.success"
+    creates: "{{ neerali_ceph_log_dir }}/{{ item.registry }}.success"
   loop: "{{ neerali_prepare_sys_dtrs }}"

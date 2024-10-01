@@ -1,0 +1,92 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Ensure workspace exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - "{{ neerali_openstack_basedir }}"
+    - "{{ neerali_openstack_artifactdir }}"
+    - "{{ neerali_openstack_logdir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create networks
+  ansible.builtin.include_tasks: network.yaml
+  vars:
+    neerali_network_action: create
+    neerali_network_payload: "{{ neerali_systems_layout.networks }}"
+  when: neerali_systems_layout.networks is defined
+
+- name: Create servers
+  vars:
+    neerali_server_action: create
+  ansible.builtin.include_tasks: server.yaml
+  loop: "{{ neerali_systems_layout.vms }}"
+  loop_control:
+    loop_var: neerali_server_config
+  when:
+    - neerali_systems_layout.vms is defined
+    - neerali_server_config.driver == "openstack"
+
+- name: Create neerali systems provisioned map
+  ansible.builtin.set_fact:
+    neerali_openstack_systems_data: { 'neerali_openstack_systems_provisioned': "{{ neerali_openstack_systems_provisioned }}" }
+  when:
+    - neerali_systems_layout.vms is defined
+    - neerali_openstack_systems_provisioned is defined
+
+- name: Store systems provisioned data to artifacts
+  ansible.builtin.copy:
+    dest: >-
+      {{
+        (neerali_openstack_artifactdir, 'neerali_openstack_provisioned_systems.yaml') |
+        ansible.builtin.path_join
+      }}
+    content: "{{ neerali_openstack_systems_data | to_nice_yaml }}"
+  when:
+    - neerali_systems_layout.vms is defined
+    - neerali_openstack_systems_data is defined
+
+- name: Add the provisoned systems to inventory
+  ansible.builtin.add_host:
+    name: "{{ item.name }}"
+    groups: "{{ item.roles + ['nodes'] }}"
+    ansible_host: "{{ item.ansible_host }}"
+    ansible_user: "{{ item.ansible_ssh_user }}"
+    neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
+  loop: "{{ neerali_openstack_systems_provisioned }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: neerali_openstack_systems_provisioned is defined
+
+- name: Add the openstack systems to the neerali provisioned list
+  ansible.builtin.set_fact:
+    neerali_systems_provisioned: >-
+      {{
+        (neerali_systems_provisioned | default([])) + neerali_openstack_systems_provisioned
+      }}
+  when: neerali_openstack_systems_provisioned is defined
+
+- name: Wait for compute nodes to be reachable
+  ansible.builtin.wait_for_connection:
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['nodes'] }}"
