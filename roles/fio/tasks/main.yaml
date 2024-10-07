@@ -14,15 +14,25 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+- name: Copy Fio Container files
+  ansible.builtin.copy:
+    src: files
+    dest: "{{ neerali_fio_artifactdir }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
+- name: Copy repo files
+  ansible.builtin.copy:
+    src: "/etc/yum.repos.d"
+    dest: "{{ neerali_fio_artifactdir }}/files"
+    remote_src: yes
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Build neerali fio Image
+  become: true
+  containers.podman.podman_image:
+    name: "{{ neerali_fio_image }}"
+    tag: "{{ neerali_fio_tag }}"
+    path: "{{ neerali_fio_artifactdir }}/files"
+
