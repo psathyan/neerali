@@ -1,0 +1,9 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+COPY yum.repos.d/* /etc/yum.repos.d/
+# Install fio
+RUN dnf -y update && \
+    dnf -y install fio && \
+    dnf clean all
+COPY runfio.sh /usr/local/bin/runfio.sh
+RUN chmod +x /usr/local/bin/runfio.sh
+CMD ["/usr/local/bin/runfio.sh"]

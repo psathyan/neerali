@@ -14,15 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+galaxy_info:
+  author: neerali
+  description: neerali role -- fio
+  company: IBM Corporation
+  license: Apache-2.0
+  min_ansible_version: 2.17
+  namespace: neerali
+  galaxy_tags:
+    - neerali
+    - test
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
+dependencies: []

@@ -14,15 +14,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+# Variables that should not be modified during the course of execution are
+# specified here. They should have a prefix of
+# "neerali_fio"
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
+neerali_fio_image: "neerali_fio"
+neerali_fio_tag: "latest"

@@ -14,15 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+# All variables intended for modification should be placed in this file.
+# All variables within this role should have a prefix of
+# "neerali_fio"
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
+neerali_fio_basedir: >-
+  {{
+    neerali_basedir | default(ansible_user_dir ~ '/neerali-data')
+  }}
+neerali_fio_artifactdir: "{{ neerali_fio_basedir ~ '/artifacts/fio' }}"
+neerali_fio_logdir: "{{ neerali_fio_basedir ~ '/logs/fio' }}"
