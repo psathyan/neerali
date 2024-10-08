@@ -1,0 +1,7 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+RUN dnf -y update && \
+	dnf -y install xfsprogs && \
+    dnf clean all
+COPY iofiller.sh /usr/local/bin/iofiller.sh
+RUN chmod +x /usr/local/bin/iofiller.sh
+CMD ["/usr/local/bin/iofiller.sh"]

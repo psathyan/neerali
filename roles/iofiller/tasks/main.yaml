@@ -14,22 +14,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+- name: Copy neerali_iofiller Container files
+  ansible.builtin.copy:
+    src: files
+    dest: "{{ neerali_iofiller_artifactdir }}"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
-
-    - name: build neerali-iofiller image on clients
-      ansible.builtin.include_role:
-        name: iofiller
-      when:
-        - neerali_use_iofiller is defined
-        - neerali_use_iofiller | bool
+- name: Build neerali_iofiller Image
+  become: true
+  containers.podman.podman_image:
+    name: "{{ neerali_iofiller_image }}"
+    tag: "{{ neerali_iofiller_tag }}"
+    path: "{{ neerali_iofiller_artifactdir }}/files"
+    build:
+      volume: /etc/yum.repos.d:/etc/yum.repos.d

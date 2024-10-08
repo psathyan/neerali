@@ -1,0 +1,47 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Get running neerali_iofiller containers 
+  become: true
+  containers.podman.podman_container_info:
+  register: neerali_iofiller_containers
+  
+- name: Stop Running neerali_iofiller containers
+  become: true
+  containers.podman.podman_container:
+    name: "{{ item.Name }}"
+    state: absent
+  loop: "{{ neerali_iofiller_containers.containers }}"
+  loop_control:
+    label: "{{ item.Name }}"
+  when:
+    - item.ImageName | regex_search(neerali_iofiller_image)
+
+- name: Remove the neerali_iofiller image
+  become: true
+  containers.podman.podman_image:
+    name: "{{ neerali_iofiller_image }}"
+    tag: "{{ neerali_iofiller_tag }}"
+    state: absent
+    
+- name: Cleanup the artifacts
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ neerali_iofiller_artifactdir }}"
+    - "{{ neerali_iofiller_logdir }}"
