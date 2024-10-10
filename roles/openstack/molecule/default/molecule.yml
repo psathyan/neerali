@@ -1,0 +1,77 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Central configuration entry point for molecule per scenario.
+
+log: true
+prerun: false
+
+provisioner:
+  name: ansible
+  log: true
+  inventory:
+    host_vars:
+      instance:
+        neerali_basedir: /tmp/neerali-data
+        ansible_user_dir: /tmp
+        neerali_systems_layout:
+          vms:
+            - name: node-01
+              type: ceph
+              cluster: ceph
+              driver: openstack
+              count: 2
+              image: RHEL-9.5.0-x86_64
+              flavor: test_flavor
+              roles:
+                - _admin
+                - mgr
+              volumes:
+                size: 2
+                count: 2
+              networks:
+                - test_net1
+              cloud_init: |
+                #cloud-config
+                ssh_pwauth: true
+                disable_root: false
+
+                groups:
+                  - cephuser
+
+                users:
+                  - name: cephuser
+                    primary-group: cephuser
+                    sudo: ALL=(ALL) NOPASSWD:ALL
+                    shell: /bin/bash
+
+                chpasswd:
+                  list: |
+                    root:passwd
+                    cephuser:pass123
+                  expire: false
+
+          networks:
+            public:
+              name: public-net
+              driver: openstack
+            data:
+              name: private-net
+              cidr: x.x.x.x/y
+              domain: testdomain.com
+              driver: openstack
+
+        neerali_use_openstack: true

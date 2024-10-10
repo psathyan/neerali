@@ -14,24 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: The playbook executes tasks related to deploy and configure the
-# system under test.
+# Calls cleanup as part of molecule-cleanup
 
 
-- name: Provision or reimage the systems
-  hosts: "{{ neerali_target_host | default('localhost') }}"
+- name: Cleanup stage for role openstack
+  hosts: all
+  gather_facts: false
 
   tasks:
-    - name: Reimage systems using teuthology
-      when:
-        - neerali_use_teuthology is defined
-        - neerali_use_teuthology | bool
-      ansible.builtin.include_role:
-        name: teuthology
-
-    - name: Provision systems on openstack
-      when:
-        - neerali_use_openstack is defined
-        - neerali_use_openstack | bool
+    - name: Executing cleanup tasks from - openstack
       ansible.builtin.include_role:
         name: openstack
+        tasks_from: cleanup.yaml

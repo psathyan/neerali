@@ -14,24 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Purpose: The playbook executes tasks related to deploy and configure the
-# system under test.
 
-
-- name: Provision or reimage the systems
-  hosts: "{{ neerali_target_host | default('localhost') }}"
+- name: Prepare
+  hosts: all
 
   tasks:
-    - name: Reimage systems using teuthology
-      when:
-        - neerali_use_teuthology is defined
-        - neerali_use_teuthology | bool
-      ansible.builtin.include_role:
-        name: teuthology
-
-    - name: Provision systems on openstack
-      when:
-        - neerali_use_openstack is defined
-        - neerali_use_openstack | bool
-      ansible.builtin.include_role:
-        name: openstack
+    - name: Ensure basedir exists
+      ansible.builtin.file:
+        path: "{{ neerali_basedir }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
