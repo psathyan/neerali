@@ -14,22 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# tasks pertaining to deploying of the cluster.
-- name: Prepare the client environment
-  hosts: client
-  gather_facts: false
+# All variables intended for modification should be placed in this file.
+# All variables within this role should have a prefix of
+# "neerali_iofiller"
 
-  tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
-      when:
-        - neerali_use_fio is defined
-        - neerali_use_fio | bool
-
-    - name: build neerali-iofiller image on clients
-      ansible.builtin.include_role:
-        name: iofiller
-      when:
-        - neerali_use_iofiller is defined
-        - neerali_use_iofiller | bool
+neerali_iofiller_basedir: >-
+  {{
+    neerali_basedir | default(ansible_user_dir ~ '/neerali-data')
+  }}
+neerali_iofiller_artifactdir: "{{ neerali_iofiller_basedir ~ '/artifacts/iofiller' }}"
+neerali_iofiller_logdir: "{{ neerali_iofiller_basedir ~ '/logs/iofiller' }}"
