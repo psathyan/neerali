@@ -21,37 +21,47 @@
   register: neerali_systems_provisioned_stat
 
 - name: Load the yaml content if the file exists
+  when:
+    - neerali_systems_provisioned_stat.stat.exists
   ansible.builtin.include_vars:
     file: "{{ neerali_openstack_artifactdir ~ '/neerali_openstack_provisioned_systems.yaml' }}"
-  when: neerali_systems_provisioned_stat.stat.exists
 
 - name: Delete openstack networks
   vars:
     neerali_network_action: delete
     neerali_network_payload: "{{ neerali_systems_layout.networks }}"
-  ansible.builtin.include_tasks: network.yaml
-  when: neerali_systems_layout.networks is defined
+  when:
+    - neerali_systems_layout.networks is defined
+  ansible.builtin.include_tasks:
+    file: network.yaml
 
 - name: Delete servers
   vars:
     neerali_server_action: delete
-  ansible.builtin.include_tasks: server.yaml
-  when: neerali_openstack_systems_provisioned is defined
+  when:
+    - neerali_openstack_systems_provisioned is defined
+  ansible.builtin.include_tasks:
+    file: server.yaml
 
 - name: Delete volumes
   vars:
     neerali_volume_action: delete
+  when:
+    - neerali_openstack_systems_provisioned is defined
   ansible.builtin.include_tasks: volume.yaml
   loop: "{{ neerali_openstack_systems_provisioned }}"
   loop_control:
     loop_var: compute_node
-  when: neerali_openstack_systems_provisioned is defined
 
 - name: Delete a neerali openstack systems provisioned file
+  when:
+    - neerali_systems_provisioned_stat.stat.exists
   ansible.builtin.file:
-    path: "{{ neerali_openstack_artifactdir ~ '/neerali_openstack_provisioned_systems.yaml' }}"
+    path: >-
+      {{
+        neerali_openstack_artifactdir ~ '/neerali_openstack_provisioned_systems.yaml'
+      }}
     state: absent
-  when: neerali_systems_provisioned_stat.stat.exists
 
 - name: Ensure workspace is cleaned
   ansible.builtin.file:

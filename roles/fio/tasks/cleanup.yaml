@@ -14,11 +14,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-- name: Get running neerali fio containers 
+- name: Get running neerali fio containers
   become: true
   containers.podman.podman_container_info:
   register: neerali_fio_containers
-  
+
 - name: Stop Running neerali_fio containers
   become: true
   containers.podman.podman_container:
@@ -36,7 +36,7 @@
     name: "{{ neerali_fio_image }}"
     tag: "{{ neerali_fio_tag }}"
     state: absent
-    
+
 - name: Cleanup the artifacts
   become: true
   ansible.builtin.file:

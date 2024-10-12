@@ -14,7 +14,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-- name: Extract OS info from image name of server {{ neerali_server_config.name }}
+- name: "Extract OS info from image name of server {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     _neerali_openstack_os_data: >-
       {{
@@ -23,19 +25,23 @@
           'version': neerali_server_config.image.split('-')[1].split('.')[0:2] | join('.')
         }
       }}
-  when: neerali_server_action | default('') == 'create'
 
-- name: Extract cloud-init yaml for server {{ neerali_server_config.name }}
+- name: "Extract cloud-init yaml for server {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     _neerali_openstack_cloud_init: "{{ neerali_server_config.cloud_init | from_yaml }}"
-  when: neerali_server_action | default('') == 'create'
 
 - name: Reset network nics payload for each server
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     _neerali_openstack_network_nics: []
-  when: neerali_server_action | default('') == 'create'
 
-- name: Generate nics payload for server {{ neerali_server_config.name }}
+- name: "Generate nics payload for server {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
+    - neerali_server_config.networks is defined
   ansible.builtin.set_fact:
     _neerali_openstack_network_nics: >-
       {{
@@ -49,25 +55,26 @@
   loop: "{{ neerali_server_config.networks }}"
   loop_control:
     loop_var: network_name
-  when:
-    - neerali_server_action | default('') == 'create'
-    - neerali_server_config.networks is defined
 
 - name: Set default server count as 1 if count is not defined
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     _neerali_server_count: "{{ neerali_server_config.count | default(1) }}"
-  when: neerali_server_action | default('') == 'create'
 
 - name: Reset instance names to volumes map for each node
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     neerali_openstack_server_volume_map: {}
-  when: neerali_server_action | default('') == 'create'
 
 - name: Generate dynamic prefix name for server node
   ansible.builtin.set_fact:
     _neerali_openstack_server_prefix: "{{ range(1000,9999) | random }}"
 
-- name: Create instance names to volumes map for server {{ neerali_server_config.name }}
+- name: "Create instance names to volumes map for server {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
   ansible.builtin.set_fact:
     neerali_openstack_server_volume_map: >-
       {{
@@ -85,18 +92,20 @@
         )
       }}
   loop: "{{ range(1, _neerali_server_count|int + 1) }}"
-  when: neerali_server_action | default('') == 'create'
 
 - name: Create volumes
-  vars:
-    neerali_volume_action: create
-    neerali_volume_data: "{{ neerali_server_config.volumes }}"
-  ansible.builtin.include_tasks: volume.yaml
   when:
     - neerali_server_action | default('') == 'create'
     - neerali_server_config.volumes is defined
+  vars:
+    neerali_volume_action: create
+    neerali_volume_data: "{{ neerali_server_config.volumes }}"
+  ansible.builtin.include_tasks:
+    file: volume.yaml
 
-- name: Create compute instances for {{ neerali_server_config.name }}
+- name: "Create compute instances for {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
   openstack.cloud.server:
     cloud: "{{ neerali_openstack_auth }}"
     state: present
@@ -112,9 +121,11 @@
   poll: 0
   register: _neerali_openstack_async_servers
   loop: "{{ neerali_openstack_server_volume_map | dict2items }}"
-  when: neerali_server_action | default('') == 'create'
 
-- name: Wait for all computes to be created for {{ neerali_server_config.name }}
+- name: "Wait for all computes to be created for {{ neerali_server_config.name }}"
+  when:
+    - neerali_server_action | default('') == 'create'
+    - _neerali_openstack_async_servers is defined
   ansible.builtin.async_status:
     jid: "{{ item.ansible_job_id }}"
   register: _neerali_openstack_systems
@@ -124,11 +135,11 @@
   loop: "{{ _neerali_openstack_async_servers.results }}"
   loop_control:
     label: "{{ item.ansible_job_id }}"
-  when:
-    - neerali_server_action | default('') == 'create'
-    - _neerali_openstack_async_servers is defined
 
 - name: Add systems to openstack provisioned list
+  when:
+    - neerali_server_action | default('') == 'create'
+    - _neerali_openstack_systems is defined
   ansible.builtin.set_fact:
     neerali_openstack_systems_provisioned: >-
       {{
@@ -150,11 +161,10 @@
   loop: "{{ _neerali_openstack_systems.results }}"
   loop_control:
     label: "{{ item.server.name }}"
-  when:
-    - neerali_server_action | default('') == 'create'
-    - _neerali_openstack_systems is defined
 
 - name: Delete compute instances
+  when:
+    - neerali_server_action | default('') == 'delete'
   openstack.cloud.server:
     cloud: "{{ neerali_openstack_auth }}"
     name: "{{ item.name }}"
@@ -162,5 +172,3 @@
   loop: "{{ neerali_openstack_systems_provisioned }}"
   loop_control:
     label: "{{ item.name }}"
-  when:
-    - neerali_server_action | default('') == 'delete'

@@ -20,16 +20,16 @@
   gather_facts: false
 
   tasks:
-    - name: build neerali-fio image on clients
-      ansible.builtin.include_role:
-        name: fio
+    - name: Build neerali-fio image on clients
       when:
         - neerali_use_fio is defined
         - neerali_use_fio | bool
-
-    - name: build neerali-iofiller image on clients
       ansible.builtin.include_role:
-        name: iofiller
+        name: fio
+
+    - name: Build neerali-iofiller image on clients
       when:
         - neerali_use_iofiller is defined
         - neerali_use_iofiller | bool
+      ansible.builtin.include_role:
+        name: iofiller

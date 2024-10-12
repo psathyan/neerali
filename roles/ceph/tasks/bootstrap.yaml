@@ -61,7 +61,7 @@
     - neerali_ceph_cephadm_registry_login | default(false) | bool
     - neerali_prepare_sys_dtrs | default(false)
   vars:
-    _args: "{{ item | neerali.general.dict2args }}"
+    _args: "{{ item | default({}) | neerali.general.dict2args }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail

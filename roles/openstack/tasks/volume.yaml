@@ -15,12 +15,15 @@
 # under the License.
 
 - name: Set default volume count as 1 if volume count per each server is not defined
-  ansible.builtin.set_fact:
-    _neerali_openstack_volumes_per_server: "{{ neerali_volume_data.count | default(1) }}"
   when:
     - neerali_volume_action | default('') == 'create'
+  ansible.builtin.set_fact:
+    _neerali_openstack_volumes_per_server: "{{ neerali_volume_data.count | default(1) }}"
 
 - name: Allocate volume names to each server node
+  when:
+    - neerali_volume_action | default('') == 'create'
+    - neerali_openstack_server_volume_map is defined
   ansible.builtin.set_fact:
     neerali_openstack_server_volume_map: >-
       {{
@@ -36,30 +39,31 @@
           }
         )
       }}
-  loop: "{{
-            neerali_openstack_server_volume_map |
-            product(
-              range(1, _neerali_openstack_volumes_per_server|int + 1)
-            )
-        }}"
-  when:
-    - neerali_volume_action | default('') == 'create'
-    - neerali_openstack_server_volume_map is defined
+  loop:
+    - >-
+      {{
+        neerali_openstack_server_volume_map |
+        product(range(1, _neerali_openstack_volumes_per_server|int + 1))
+      }}
 
 - name: Reset volumes names list for each node
-  ansible.builtin.set_fact:
-    _neerali_openstack_volume_names: []
   when:
     - neerali_volume_action | default('') == 'create'
+  ansible.builtin.set_fact:
+    _neerali_openstack_volume_names: []
 
 - name: Fetch the volume names for all server nodes
+  when:
+    - neerali_volume_action | default('') == 'create'
   ansible.builtin.set_fact:
     _neerali_openstack_volume_names: "{{ _neerali_openstack_volume_names + item.value }}"
   loop: "{{ neerali_openstack_server_volume_map | dict2items }}"
-  when:
-    - neerali_volume_action | default('') == 'create'
 
 - name: Create volumes for all instances of server
+  when:
+    - neerali_volume_action | default('') == 'create'
+    - neerali_volume_data.size is defined
+    - _neerali_openstack_volume_names is defined
   openstack.cloud.volume:
     cloud: "{{ neerali_openstack_auth }}"
     state: present
@@ -70,12 +74,11 @@
   poll: 0
   register: _neerali_openstack_async_volumes
   loop: "{{ _neerali_openstack_volume_names }}"
-  when:
-    - neerali_volume_action | default('') == 'create'
-    - neerali_volume_data.size is defined
-    - _neerali_openstack_volume_names is defined
 
 - name: Wait for all volumes to be created
+  when:
+    - neerali_volume_action | default('') == 'create'
+    - _neerali_openstack_async_volumes is defined
   ansible.builtin.async_status:
     jid: "{{ item.ansible_job_id }}"
   register: _neerali_openstack_volumes
@@ -85,37 +88,34 @@
   loop: "{{ _neerali_openstack_async_volumes.results }}"
   loop_control:
     label: "{{ item.ansible_job_id }}"
-  when:
-    - neerali_volume_action | default('') == 'create'
-    - _neerali_openstack_async_volumes is defined
 
 - name: Check if volumes exist
+  when:
+    - neerali_volume_action | default('') == 'delete'
   openstack.cloud.volume_info:
     cloud: "{{ neerali_openstack_auth }}"
     name: "{{ item }}"
   loop: "{{ compute_node.volumes }}"
   register: volume_info
-  when:
-    - neerali_volume_action | default('') == 'delete'
 
 - name: Reset combined volumes list for each compute node
-  ansible.builtin.set_fact:
-    _neerali_combined_volumes: []
   when:
     - neerali_volume_action | default('') == 'delete'
+  ansible.builtin.set_fact:
+    _neerali_combined_volumes: []
 
-- name: Combine all volumes of each compute node
+- name: Combine all volumes of each compute node  # noqa: jinja[invalid]
+  when:
+    - neerali_volume_action | default('') == 'delete'
   ansible.builtin.set_fact:
     _neerali_combined_volumes: "{{ _neerali_combined_volumes + (item | json_query('volumes')) }}"
   loop: "{{ volume_info.results }}"
-  when:
-    - neerali_volume_action | default('') == 'delete'
 
 - name: Delete OpenStack Volume of compute node
+  when:
+    - neerali_volume_action | default('') == 'delete'
   openstack.cloud.volume:
     cloud: "{{ neerali_openstack_auth }}"
     name: "{{ item }}"
     state: absent
   loop: "{{ _neerali_combined_volumes | map(attribute='name') | list }}"
-  when:
-    - neerali_volume_action | default('') == 'delete'

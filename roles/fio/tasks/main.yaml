@@ -25,7 +25,7 @@
   ansible.builtin.copy:
     src: "/etc/yum.repos.d"
     dest: "{{ neerali_fio_artifactdir }}/files"
-    remote_src: yes
+    remote_src: true
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
 
@@ -35,4 +35,3 @@
     name: "{{ neerali_fio_image }}"
     tag: "{{ neerali_fio_tag }}"
     path: "{{ neerali_fio_artifactdir }}/files"
-
