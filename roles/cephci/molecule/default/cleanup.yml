@@ -14,18 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# The purpose of this playbook is to run tests against a given environment.
-# The tests can exercise any product evaluation having Ceph as one of the
-# components.
+# Calls cleanup as part of molecule-cleanup
 
-- name: Perform evaluation
-  hosts: "{{ neerali_target_host | default('localhost') }}"
+
+- name: Cleanup stage for role cephci
+  hosts: all
   gather_facts: false
 
   tasks:
-    - name: Execute tests using cepchi
-      when:
-        - neerali_run_cephci is defined
-        - neerali_run_cephci | bool
+    - name: Executing cleanup tasks from - cephci
       ansible.builtin.include_role:
         name: cephci
+        tasks_from: cleanup.yaml

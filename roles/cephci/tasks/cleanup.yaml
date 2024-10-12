@@ -14,18 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# The purpose of this playbook is to run tests against a given environment.
-# The tests can exercise any product evaluation having Ceph as one of the
-# components.
 
-- name: Perform evaluation
-  hosts: "{{ neerali_target_host | default('localhost') }}"
-  gather_facts: false
-
-  tasks:
-    - name: Execute tests using cepchi
-      when:
-        - neerali_run_cephci is defined
-        - neerali_run_cephci | bool
-      ansible.builtin.include_role:
-        name: cephci
+- name: Ensure the cephci workspace is not present.
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ neerali_cephci_artifactdir }}"
+    - "{{ neerali_cephci_logdir }}"
+  loop_control:
+    label: "{{ item }}"

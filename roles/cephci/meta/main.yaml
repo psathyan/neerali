@@ -14,18 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# The purpose of this playbook is to run tests against a given environment.
-# The tests can exercise any product evaluation having Ceph as one of the
-# components.
+galaxy_info:
+  author: neerali
+  description: neerali role -- cephci
+  company: IBM Corporation
+  license: Apache-2.0
+  min_ansible_version: 2.17
+  namespace: neerali
+  galaxy_tags:
+    - neerali
+    - test
 
-- name: Perform evaluation
-  hosts: "{{ neerali_target_host | default('localhost') }}"
-  gather_facts: false
-
-  tasks:
-    - name: Execute tests using cepchi
-      when:
-        - neerali_run_cephci is defined
-        - neerali_run_cephci | bool
-      ansible.builtin.include_role:
-        name: cephci
+dependencies: []
