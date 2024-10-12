@@ -17,11 +17,11 @@
 # tasks pertaining to deploying of the cluster.
 - name: Deploy ceph
   hosts: _admin
+  become: true
   gather_facts: false
 
   tasks:
     - name: Install cephadm package
-      become: true
       vars:
         _package: >-
           {{
@@ -38,9 +38,3 @@
     - name: Deploy ceph
       ansible.builtin.include_role:
         name: ceph
-        apply:
-          become: true
-          delegate_to: >-
-            {{
-              neerali_systems_provisioned | neerali.general.get_admin_nodes
-            }}
