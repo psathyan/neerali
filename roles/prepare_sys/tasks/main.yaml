@@ -58,3 +58,9 @@
 - name: Ensure hosts file contains all node public network information.
   ansible.builtin.include_tasks:
     file: host.yaml
+
+- name: Ensure firewall services is deployed
+  when:
+    - neerali_prepare_sys_firewalld | default(true) | bool
+  ansible.builtin.include_tasks:
+    file: firewall.yaml
