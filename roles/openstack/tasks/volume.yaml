@@ -39,12 +39,13 @@
           }
         )
       }}
-  loop:
-    - >-
-      {{
-        neerali_openstack_server_volume_map |
-        product(range(1, _neerali_openstack_volumes_per_server|int + 1))
-      }}
+  loop: >-
+    {{
+      neerali_openstack_server_volume_map |
+      product(
+        range(1, _neerali_openstack_volumes_per_server|int + 1)
+      )
+    }}
 
 - name: Reset volumes names list for each node
   when:
