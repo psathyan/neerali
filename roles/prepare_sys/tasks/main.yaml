@@ -25,6 +25,11 @@
       }}
     state: present
 
+- name: Ensure UTC timezone
+  become: true
+  community.general.timezone:
+    name: "Etc/GMT"
+
 - name: Ensure time sync exists
   ansible.builtin.include_tasks:
     file: chrony.yaml
