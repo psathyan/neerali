@@ -60,12 +60,12 @@
   when:
     - neerali_ceph_cephadm_registry_login | default(false) | bool
     - neerali_prepare_sys_dtrs | default(false)
-  vars:
-    _args: "{{ item | default({}) | neerali.general.dict2args }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      cephadm registry-login {{ _args }}
-      touch {{ neerali_ceph_log_dir }}/{{ item.registry }}.success
-    creates: "{{ neerali_ceph_log_dir }}/{{ item.registry }}.success"
+      cephadm registry-login --registry-url {{ item.registry }} \
+          --registry-username {{ item.username }} \
+          --registry-password {{ item.password }}
+      touch {{ neerali_ceph_logdir }}/{{ item.registry }}.success
+    creates: "{{ neerali_ceph_logdir }}/{{ item.registry }}.success"
   loop: "{{ neerali_prepare_sys_dtrs }}"
