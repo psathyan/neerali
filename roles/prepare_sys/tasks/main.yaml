@@ -15,6 +15,16 @@
 # under the License.
 
 
+- name: Accept Storage license
+  when:
+    - neerali_ibm_build is defined
+    - neerali_ibm_build | bool
+  ansible.builtin.package:
+    name: "ibm-storage-ceph-license"
+    state: present
+  environment:
+    ACCEPT_EULA: "Y"
+
 - name: Install the required packages
   become: true
   ansible.builtin.package:

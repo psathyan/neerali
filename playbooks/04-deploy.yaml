@@ -22,18 +22,9 @@
 
   tasks:
     - name: Install cephadm package
-      vars:
-        _package: >-
-          {{
-            ['cephadm', 'ibm-storage-ceph-license']
-            if neerali_ibm_build is defined
-            else
-            ['cephadm']
-          }}
       ansible.builtin.package:
-        name: "{{ _package }}"
+        name: "cephadm"
         state: present
-      environment: "{{ neerali_ibm_eula_accept | default(omit) }}"
 
     - name: Deploy ceph
       ansible.builtin.include_role:
