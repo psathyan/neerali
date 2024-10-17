@@ -48,6 +48,18 @@
   ansible.builtin.include_tasks:
     file: hosts.yaml
 
+- name: Login to registry
+  when:
+    - neerali_ceph_cephadm_registry_login | default(false) | bool
+    - neerali_prepare_sys_dtrs | default(false)
+  vars:
+    registry: "{{ item.registry }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password }}"
+  ansible.builtin.include_tasks:
+    file: registry.yaml
+  loop: "{{ neerali_prepare_sys_dtrs }}"
+
 - name: Deploy OSD
   ansible.builtin.include_tasks:
     file: osd.yaml
