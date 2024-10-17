@@ -20,13 +20,13 @@
       {{
         neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name].keys()
       }}
-    _log: "{{ neerali_ceph_logdir ~ registry ~ item ~ '.success' }}"
+    _log: "{{ ansible_user_dir ~ dtr.registry ~ item ~ '.success' }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      ceph cephadm registry-login --registry-url {{ registry }} \
-          --registry-username {{ username }} \
-          --registry-password {{ password }}
+      ceph cephadm registry-login --registry-url {{ dtr.registry }} \
+          --registry-username {{ dtr.username }} \
+          --registry-password {{ dtr.password }}
       touch {{ _log }}
     creates: "{{ _log }}"
   delegate_to: "{{ item }}"
