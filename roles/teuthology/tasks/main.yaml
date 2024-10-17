@@ -39,8 +39,6 @@
 # details and managed outside the purview of this run.
 - name: Ensure teuthology configuration file exists.
   become: true
-  vars:
-    conf_string: "{{ neerali_teuthology_conf | ansible.builtin.to_yaml }}"
   ansible.builtin.template:
     src: "templates/teuthology.yaml.j2"
     dest: "/etc/teuthology.yaml"
@@ -49,11 +47,31 @@
     mode: "0644"
     force: false
 
-- name: Install teuthology
+- name: Clone the repository
+  ansible.builtin.git:
+    dest: "{{ neerali_teuthology_artifactdir }}"
+    repo: "{{ neerali_teuthology_repo.url }}"
+    single_branch: true
+    version: "{{ neerali_teuthology_repo.branch }}"
+
+- name: Install packaging as a pre-requisite
   ansible.builtin.pip:
-    name: "{{ neerali_teuthology_repo }}"
+    name: "packaging"
     virtualenv: "{{ neerali_teuthology_artifactdir }}/venv"
     virtualenv_command: "python3 -m venv"
+
+- name: Install packages from requirements
+  ansible.builtin.pip:
+    extra_args: "--use-pep517"
+    requirements: "{{ neerali_teuthology_artifactdir ~ '/requirements.txt'}}"
+    virtualenv: "{{ neerali_teuthology_artifactdir }}/venv"
+
+- name: Install teuthology in editable mode
+  ansible.builtin.pip:
+    chdir: "{{ neerali_teuthology_artifactdir }}"
+    editable: true
+    name: ".[test]"
+    virtualenv: "{{ neerali_teuthology_artifactdir }}/venv"
 
 - name: Reimage nodes
   when:

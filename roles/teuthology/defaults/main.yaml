@@ -31,5 +31,7 @@ neerali_teuthology_logdir: >-
   {{
     neerali_teuthology_basedir ~ '/logs/teuthology'
   }}
-neerali_teuthology_repo: "git+https://github.com/ceph/teuthology"
+neerali_teuthology_repo:
+  url: "https://github.com/ceph/teuthology.git"
+  branch: main
 neerali_teuthology_reimage: false
