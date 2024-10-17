@@ -19,6 +19,7 @@
   when:
     - neerali_ibm_build is defined
     - neerali_ibm_build | bool
+  become: true
   ansible.builtin.package:
     name: "ibm-storage-ceph-license"
     state: present
