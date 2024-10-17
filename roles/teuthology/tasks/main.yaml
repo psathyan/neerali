@@ -40,7 +40,7 @@
 - name: Ensure teuthology configuration file exists.
   become: true
   vars:
-    email_address: "{{ neerali_publish_email | default('cephci@redhat.com') }}"
+    conf_string: "{{ neerali_teuthology_conf | ansible.builtin.to_yaml }}"
   ansible.builtin.template:
     src: "templates/teuthology.yaml.j2"
     dest: "/etc/teuthology.yaml"

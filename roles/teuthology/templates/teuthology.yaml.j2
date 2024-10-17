@@ -3,6 +3,4 @@
 
 max_job_time: 2400
 archive_base: "{{ neerali_teuthology_artifactdir }}"
-{% for k in neerali_teuthology_conf %}
-{{ k }}: {{ neerali_teuthology_conf[k] }}
-{% endfor %}
+{{ conf_string }}
