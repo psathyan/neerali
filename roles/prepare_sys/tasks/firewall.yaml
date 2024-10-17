@@ -16,11 +16,13 @@
 
 
 - name: Ensure firewall package is installed
+  become: true
   ansible.builtin.package:
     name: firewalld
     state: present
 
 - name: Ensure firewalld service is running
+  become: true
   ansible.builtin.service:
     name: firewalld
     state: started
