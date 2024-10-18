@@ -24,7 +24,7 @@
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      ceph cephadm registry-login --registry-url {{ dtr.registry }} \
+      cephadm registry-login --registry-url {{ dtr.registry }} \
           --registry-username {{ dtr.username }} \
           --registry-password {{ dtr.password }}
       touch {{ _log }}
