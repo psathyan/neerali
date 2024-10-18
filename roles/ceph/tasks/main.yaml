@@ -59,6 +59,13 @@
     label: "{{ dtr.registry }}"
     loop_var: dtr
 
+- name: Ensure manager daemons are running
+  vars:
+    service_type: mgr
+    service_name: mgr
+  ansible.builtin.include_tasks:
+    file: wait_until.yaml
+
 - name: Deploy OSD
   ansible.builtin.include_tasks:
     file: osd.yaml
