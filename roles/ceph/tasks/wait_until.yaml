@@ -29,5 +29,5 @@
     _status.stdout is defined and
     _status.stdout == "true"
   delay: "{{ sleep_time | default(10) }}"
-  retries: "{{ retry_count | default(6) }}"
+  retries: "{{ retry_count | default(30) }}"
   changed_when: false

@@ -89,6 +89,5 @@
   vars:
     service_type: nvmeof
     service_name: "nvmeof.{{ gw_spec['service_id'] }}"
-    retry_count: 20
   ansible.builtin.include_tasks:
     file: wait_until.yaml
