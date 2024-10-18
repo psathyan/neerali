@@ -25,6 +25,12 @@ install. Along with system configuration.
   holding information to access Docker / Container registeries.
 * `neerali_prepare_sys_sysctl_conf` (dict) holds the kernel tunable parameters
   that needs to be applied on the systems.
+* `neerali_prepare_sys_firewalld` (boo) defaults to `true`. Ensure the firewall
+  service is enabled on the host.
+* `neerali_prepare_sys_use_fqdn` (bool) when enable configures the hostname of
+  the system to use FQDN. Defaults to `false`
+* `neerali_prepare_sys_use_shortname` (bool) defaults to `true`. Ensure the
+  hostname of the system is the shortname.
 
 ## Examples
 

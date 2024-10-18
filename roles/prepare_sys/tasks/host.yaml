@@ -60,3 +60,19 @@
       {{ _v }}  {{ _k }}
       {%     endfor                                                       -%}
       {% endfor                                                           -%}
+
+- name: Ensure to use shortname
+  when:
+    - neerali_prepare_sys_use_shortname | default(true) | bool
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ ansible_hostname }}"
+    use: "systemd"
+
+- name: Ensure to use FQDN
+  when:
+    - neerali_prepare_sys_use_fqdn | default(false) | bool
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ ansible_fqdn }}"
+    use: "systemd"
