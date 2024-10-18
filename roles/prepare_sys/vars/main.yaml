@@ -24,3 +24,4 @@ neerali_prepare_sys_packages:
   - lvm2
   - chrony
   - ceph-common
+  - cephadm
