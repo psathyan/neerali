@@ -26,3 +26,29 @@
   ansible.builtin.service:
     name: firewalld
     state: started
+
+- name: Ensure default Ceph ports are enabled.
+  become: true
+  ansible.posix.firewalld:
+    immediate: true
+    permanent: true
+    port: "{{ item }}"
+    state: enabled
+  loop:
+    - 6800-7300/tcp
+    - 3300/tcp
+    - 6789/tcp
+  loop_control:
+    label: "{{ item }}"
+
+- name: Ensure custom Ceph ports are enabled.
+  when:
+    - neerali_prepare_sys_firewall_ports is defined
+    - neerali_prepare_sys_firewall_ports | length > 0
+  become: true
+  ansible.posix.firewalld:
+    immediate: true
+    permanent: true
+    port: "{{ item }}"
+    state: enabled
+  loop: "{{ neerali_prepare_sys_firewall_ports }}"

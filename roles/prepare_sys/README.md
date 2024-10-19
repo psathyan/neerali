@@ -31,6 +31,8 @@ install. Along with system configuration.
   the system to use FQDN. Defaults to `false`
 * `neerali_prepare_sys_use_shortname` (bool) defaults to `true`. Ensure the
   hostname of the system is the shortname.
+* `neerali_prepare_sys_firewall_ports` (list) the custom ports to be opened in
+  the firewall.
 
 ## Examples
 
