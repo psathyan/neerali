@@ -15,10 +15,12 @@
 - name: Remove existing repo files
   when: neerali_repo_setup_remove_repo_files | bool
   become: true
-  ansible.builtin.command:
-    chdir: "/etc/yum.repos.d"
-    cmd: "rm -f *.repo"
-    removes: "*.repo"
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      rm -f /etc/yum.repos.d/{epel*,rhceph-4*}
+      dnf clean all
+    removes: "/etc/yum.repos.d/epel*"
 
 - name: Create the repo files
   become: true
