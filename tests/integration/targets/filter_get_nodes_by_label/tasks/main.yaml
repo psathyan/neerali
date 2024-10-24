@@ -1,0 +1,135 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+# Unit tests for get_nodes_by_label
+
+
+- name: Test label filteration when labels exist
+  vars:
+    nodes:
+      - name: node-01
+        roles:
+          - osd
+          - mon
+          - mgr
+          - _admin
+      - name: node-02
+        roles:
+          - osd
+          - mon
+          - mgr
+      - name: node-03
+        roles:
+          - mon
+          - mgr
+    _result: >-
+      {{
+        nodes | neerali.general.get_nodes_by_label(label='osd', cluster='ceph')
+      }}
+  ansible.builtin.assert:
+    that:
+      - _result | length == 2
+      - "'node-01' in _result"
+      - "'node-02' in _result"
+      - "'node-03' not in _result"
+
+- name: Test label filteration when there is no match
+  vars:
+    nodes:
+      - name: node-01
+        roles:
+          - osd
+          - mon
+          - mgr
+          - _admin
+      - name: node-02
+        roles:
+          - osd
+          - mon
+          - mgr
+      - name: node-03
+        roles:
+          - mon
+          - mgr
+    _result: >-
+      {{
+        nodes |
+        neerali.general.get_nodes_by_label(label='osds', cluster='ceph')
+      }}
+  ansible.builtin.assert:
+    that:
+      - not _result
+
+- name: Test label filteration when there is one match
+  vars:
+    nodes:
+      - name: node-01
+        roles:
+          - osd
+          - mon
+          - mgr
+          - _admin
+      - name: node-02
+        roles:
+          - osd
+          - mon
+          - mgr
+      - name: node-03
+        roles:
+          - mon
+          - mgr
+    _result: >-
+      {{
+        nodes |
+        neerali.general.get_nodes_by_label(label='_admin', cluster='ceph')
+      }}
+  ansible.builtin.assert:
+    that:
+      - _result | length == 1
+      - "'node-01' in _result"
+      - "'node-02' not in _result"
+      - "'node-03' not in _result"
+
+- name: Test label filteration when labels exist with cluster name
+  vars:
+    nodes:
+      - name: node-01
+        cluster: octo
+        roles:
+          - osd
+          - mon
+          - mgr
+          - _admin
+      - name: node-02
+        roles:
+          - osd
+          - mon
+          - mgr
+      - name: node-03
+        roles:
+          - mon
+          - mgr
+    _result: >-
+      {{
+        nodes |
+        neerali.general.get_nodes_by_label(label='osd', cluster='octo')
+      }}
+  ansible.builtin.assert:
+    that:
+      - _result | length == 1
+      - "'node-01' in _result"
+      - "'node-02' not in _result"
+      - "'node-03' not in _result"
