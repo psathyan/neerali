@@ -8,7 +8,7 @@ LABEL vendor=IBM
 LABEL author=cephqe@ibm.com
 
 USER root
-RUN dnf install -y sudo python3.12 make git-core && \
+RUN dnf install -y sudo python3.12 python3.12-devel make git-core gcc && \
     dnf clean all
 
 RUN useradd ciuser
