@@ -1,0 +1,106 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: "Gather the NVMe-oF daemons for {{ nvmeof_service_name }}"
+  ansible.builtin.command:
+    cmd: >-
+      ceph orch ps
+      --daemon_type nvmeof
+      --service_name {{ nvmeof_service_name }}
+      --format json
+  changed_when: true
+  register: _daemons_results
+
+- name: Gather the list of NVMe-oF gateways
+  vars:
+    _query: "[?status==`1`].{hostname: hostname, port: ports[0]}"
+  ansible.builtin.set_fact:
+    _nvmeof_gw: >-
+      {{
+        _daemon_results.stdout |
+        from_json |
+        community.general.json_query(_query)
+      }}
+    _admin_gw: >-
+      {{
+        _daemon_results.stdout |
+        from_json |
+        community.general.json_query(_query) |
+        first
+      }}
+
+- name: Create the subsystem
+  when:
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
+  vars:
+    _cli_args: >-
+      {{
+        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['options'] |
+        default({}) |
+        neerali.general.dict2args
+      }}
+    _log: "{{ neerali_ceph_logdir ~ '/nvmeof_' ~ nvmeof_group_name ~ '_' ~ _index }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      nvmeof-cli --format json \
+          --server-address {{ _admin_gw.hostname }} \
+          --server-port {{ _admin_gw.port }} \
+          subsystem add \
+          --subsystem {{ item }} \
+          {{ _cli_args }} | tee {{ _log ~ '.log' }}
+      touch {{ _log ~ '.success' }}
+    creates: "{{ _log ~ '.success' }}"
+  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
+  loop_control:
+    label: "{{ item }}"
+    index_var: _index
+
+- name: Create the listeners for the subsystem
+  when:
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
+  vars:
+    nvme_admin_gw: "{{ _admin_gw }}"
+    nvmeof_subsystem: "{{ item ~ '.nvmeof_group_name' }}"
+    listeners: >-
+      {{
+        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['listeners']
+      }}
+  ansible.builtin.include_tasks:
+    file: listener.yaml
+  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Allow the given hosts
+  when:
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
+    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
+  vars:
+    nvme_admin_gw: "{{ _admin_gw }}"
+    nvmeof_subsystem: "{{ item ~ '.nvmeof_group_name' }}"
+    nvmeof_clients: >-
+      {{
+        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['allowed_hosts']
+      }}
+  ansible.builtin.include_tasks:
+    file: nvme_clients.yaml
+  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
+  loop_control:
+    label: "{{ item }}"
