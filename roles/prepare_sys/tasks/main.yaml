@@ -80,3 +80,10 @@
     - neerali_prepare_sys_firewalld | default(true) | bool
   ansible.builtin.include_tasks:
     file: firewall.yaml
+
+- name: Ensure NVMe-oF cli is deployed
+  when:
+    - neerali_ibm_build is defined
+    - neerali_ibm_build | bool
+  ansible.builtin.include_tasks:
+    file: nvmeof_cli.yaml
