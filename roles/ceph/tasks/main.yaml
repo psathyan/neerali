@@ -79,3 +79,9 @@
   ansible.builtin.include_tasks:
     file: gateway.yaml
   loop: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['specs'] }}"
+
+- name: Deploy NVMe-oF target
+  when:
+    - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'] is defined
+  ansible.builtin.include_tasks:
+    file: target.yaml
