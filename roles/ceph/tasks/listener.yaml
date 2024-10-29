@@ -1,0 +1,41 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Add listeners
+  when:
+    - listeners.count is not defined
+  vars:
+    _log: >-
+      {{
+        neerali_ceph_logdir ~ '/nvme_listener_' ~ item.hostname
+      }}
+    _host_ip: >-
+      {{
+        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name][item.hostname]
+      }}
+  ansible.builtin.shell:
+    cmd: |
+      set -exuo pipefail
+      nvmeof-cli --format json \
+          --server-address {{ item.hostname }} \
+          --server-port {{ nvme_admin_gw.port }} \
+          listener add \
+          --subsystem {{ nvmeof_subsystem }} \
+          --traddr {{ _host_ip }} | tee {{ _log ~ '.log' }}
+      touch {{ _log ~ '.success' }}
+    creates: "{{ _log ~ '.success' }}"
+  loop: "{{ listeners }}"
