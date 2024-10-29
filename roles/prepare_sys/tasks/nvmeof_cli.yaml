@@ -18,7 +18,7 @@
 - name: Ensure nvmeof-cli image exists
   become: true
   containers.podman.podman_image:
-    name: neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image']
+    name: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image'] }}"
     state: present
 
 - name: Ensure nvmeof-cli alias exists and points to the right image
