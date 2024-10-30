@@ -15,6 +15,13 @@
 # under the License.
 
 
+- name: Ensure NVMe-tcp module is loaded
+  become: true
+  community.general.modprobe:
+    name: nvme_tcp
+    state: present
+    persistent: present
+
 - name: Ensure nvmeof-cli image exists
   become: true
   containers.podman.podman_image:
