@@ -77,7 +77,7 @@
     - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
   vars:
     nvme_admin_gw: "{{ _admin_gw }}"
-    nvmeof_subsystem: "{{ item ~ '.nvmeof_group_name' }}"
+    nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
     listeners: >-
       {{
         neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['listeners']
@@ -94,7 +94,7 @@
     - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
   vars:
     nvme_admin_gw: "{{ _admin_gw }}"
-    nvmeof_subsystem: "{{ item ~ '.nvmeof_group_name' }}"
+    nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
     nvmeof_clients: >-
       {{
         neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['allowed_hosts']
