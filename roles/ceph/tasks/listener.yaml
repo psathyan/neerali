@@ -16,8 +16,6 @@
 
 
 - name: Add listeners
-  when:
-    - listeners.count is not defined
   vars:
     _log: >-
       {{
@@ -30,12 +28,14 @@
   ansible.builtin.shell:
     cmd: |
       set -exuo pipefail
-      nvmeof-cli --format json \
+      podman run --rm {{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image'] }} \
+          --format json \
           --server-address {{ item.hostname }} \
           --server-port {{ nvme_admin_gw.port }} \
           listener add \
           --subsystem {{ nvmeof_subsystem }} \
+          --host-name {{ item.hostname }} \
           --traddr {{ _host_ip }} | tee {{ _log ~ '.log' }}
       touch {{ _log ~ '.success' }}
     creates: "{{ _log ~ '.success' }}"
-  loop: "{{ listeners }}"
+  loop: "{{ nvmeof_gw_listeners }}"

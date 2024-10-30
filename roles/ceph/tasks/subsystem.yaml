@@ -65,7 +65,8 @@
       ansible.builtin.shell:
         cmd: |
           set -euxo pipefail
-          nvmeof-cli --format json \
+          podman run --rm {{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image'] }} \
+              --format json \
               --server-address {{ _admin_gw.hostname }} \
               --server-port {{ _admin_gw.port }} \
               subsystem add \
@@ -82,7 +83,7 @@
       vars:
         nvme_admin_gw: "{{ _admin_gw }}"
         nvmeof_subsystem: "{{ _subsystem ~ '.' ~ nvmeof_service.group }}"
-        listeners: >-
+        nvmeof_gw_listeners: >-
           {{
             neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_service.group][_subsystem]['listeners']
           }}

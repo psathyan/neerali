@@ -24,7 +24,8 @@
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
-      nvmeof-cli --format json \
+      podman run --rm {{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image'] }} \
+          --format json \
           --server-address {{ nvme_admin_gw.hostname }} \
           --server-port {{ nvme_admin_gw.port }} \
           host add \

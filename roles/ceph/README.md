@@ -68,8 +68,6 @@ supported by each subsystem key.
 * `traddr` (str) Optional, the IP address of the host.
 * `trsvcid` (int) The port number to be used.
 * `adrfam` (str) IP address family. Allowed values are `ipv4 | ipv6`.
-* `count` (int) Optional, the number of hosts to be selected. It cannot be used
-  with other keys.
 
 #### Example for passing additional bootstrap arguments
 
