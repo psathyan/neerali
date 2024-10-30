@@ -20,7 +20,11 @@
     - nvmeof_clients is defined
     - nvmeof_clients | length > 0
   vars:
-    _log: "{{ neerali_ceph_logdir ~ '/nvme_clients_allowed' ~ _index }}"
+    _nqn_last: "{{ _subsystem | split(':') | last }}"
+    _log: >-
+      {{
+        neerali_ceph_logdir ~ '/nvme_clients_allowed_for_' ~ _nqn_last ~ '_' ~ _index
+      }}
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
