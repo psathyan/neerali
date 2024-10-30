@@ -43,64 +43,65 @@
         first
       }}
 
-- name: Create the subsystem
+- name: Perform NVMe-oF target configuration.
   when:
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
+    - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
+    - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
   vars:
-    _cli_args: >-
+    _nqns: >-
       {{
-        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['options'] |
-        default({}) |
-        neerali.general.dict2args
+        neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys()
       }}
-    _log: "{{ neerali_ceph_logdir ~ '/nvmeof_' ~ nvmeof_group_name ~ '_' ~ _index }}"
-  ansible.builtin.shell:
-    cmd: |
-      set -euxo pipefail
-      nvmeof-cli --format json \
-          --server-address {{ _admin_gw.hostname }} \
-          --server-port {{ _admin_gw.port }} \
-          subsystem add \
-          --subsystem {{ item }} \
-          {{ _cli_args }} | tee {{ _log ~ '.log' }}
-      touch {{ _log ~ '.success' }}
-    creates: "{{ _log ~ '.success' }}"
-  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
-  loop_control:
-    label: "{{ item }}"
-    index_var: _index
+  block:
+    - name: Create the NVMe-oF subsystems
+      vars:
+        _cli_args: >-
+          {{
+            neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['options'] |
+            default({}) |
+            neerali.general.dict2args
+          }}
+        _log: "{{ neerali_ceph_logdir ~ '/nvmeof_' ~ nvmeof_group_name ~ '_' ~ _index }}"
+      ansible.builtin.shell:
+        cmd: |
+          set -euxo pipefail
+          nvmeof-cli --format json \
+              --server-address {{ _admin_gw.hostname }} \
+              --server-port {{ _admin_gw.port }} \
+              subsystem add \
+              --subsystem {{ item }} \
+              {{ _cli_args }} | tee {{ _log ~ '.log' }}
+          touch {{ _log ~ '.success' }}
+        creates: "{{ _log ~ '.success' }}"
+      loop: "{{ _nqns }}"
+      loop_control:
+        label: "{{ item }}"
+        index_var: _index
 
-- name: Create the listeners for the subsystem
-  when:
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
-  vars:
-    nvme_admin_gw: "{{ _admin_gw }}"
-    nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
-    listeners: >-
-      {{
-        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['listeners']
-      }}
-  ansible.builtin.include_tasks:
-    file: listener.yaml
-  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
-  loop_control:
-    label: "{{ item }}"
+    - name: Create the listeners for the subsystem
+      vars:
+        nvme_admin_gw: "{{ _admin_gw }}"
+        nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
+        listeners: >-
+          {{
+            neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['listeners']
+          }}
+      ansible.builtin.include_tasks:
+        file: listener.yaml
+      loop: "{{ _nqns }}"
+      loop_control:
+        label: "{{ item }}"
 
-- name: Allow the given hosts
-  when:
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name] is defined
-    - neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() | length > 0
-  vars:
-    nvme_admin_gw: "{{ _admin_gw }}"
-    nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
-    nvmeof_clients: >-
-      {{
-        neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['allowed_hosts']
-      }}
-  ansible.builtin.include_tasks:
-    file: nvme_clients.yaml
-  loop: "{{ neerali_ceph_conf[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name].keys() }}"
-  loop_control:
-    label: "{{ item }}"
+    - name: Allow the given hosts
+      vars:
+        nvme_admin_gw: "{{ _admin_gw }}"
+        nvmeof_subsystem: "{{ item ~ '.' ~ nvmeof_group_name }}"
+        nvmeof_clients: >-
+          {{
+            neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_group_name][item]['allowed_hosts']
+          }}
+      ansible.builtin.include_tasks:
+        file: nvme_clients.yaml
+      loop: "{{ _nqns }}"
+      loop_control:
+        label: "{{ item }}"
