@@ -17,9 +17,10 @@
 
 - name: Add listeners
   vars:
+    _nqn_last: "{{ _subsystem | split(':') | last }}"
     _log: >-
       {{
-        neerali_ceph_logdir ~ '/nvme_listener_' ~ item.hostname
+        neerali_ceph_logdir ~ '/nvme_listener_' ~ item.hostname ~ _nqn_last
       }}
     _host_ip: >-
       {{
