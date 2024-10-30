@@ -23,7 +23,7 @@
       --service_name {{ nvmeof_service_name }}
       --format json
   changed_when: true
-  register: _daemons_results
+  register: _daemon_results
 
 - name: Gather the list of NVMe-oF gateways
   vars:
