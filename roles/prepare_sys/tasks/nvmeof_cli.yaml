@@ -24,7 +24,7 @@
 - name: Ensure nvmeof-cli alias exists and points to the right image
   become: true
   vars:
-    cli_image: neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image']
+    cli_image: "{{ neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['cli_image'] }}"
   ansible.builtin.lineinfile:
     line: "alias nvmeof-cli='podman run --rm {{ cli_image }}'"
     path: "/root/.bashrc"
