@@ -33,11 +33,9 @@
       }}
 
 - name: Create the required subsystems and listeners
-  vars:
-    nvmeof_service_name: "{{ item.name }}"
-    nvmeof_group_name: "{{ item.group }}"
   ansible.builtin.include_tasks:
     file: subsystem.yaml
   loop: "{{ _nvmeof_services }}"
   loop_control:
-    label: "{{ item.name }}"
+    loop_var: nvmeof_service
+    label: "{{ nvmeof_service.name }}"
