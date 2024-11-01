@@ -1,0 +1,89 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Ensure the NMVe over TCP packages are present
+  become: true
+  ansible.builtin.package:
+    name: "{{ neerali_client_nvme_packages }}"
+    state: present
+
+- name: Ensure NVMe-tcp module is loaded
+  become: true
+  community.general.modprobe:
+    name: nvme_tcp
+    state: present
+    persistent: present
+
+# The third item in the list of ports is the listener port that needs to be
+# configured. This is Ceph behavior.
+- name: Gather the host IP to be used for communication
+  become: true
+  vars:
+    _host_ip: >-
+      {% set hostip = ""                                                    -%}
+      {% set _ips = ansible_all_ipv4_addresses + ansible_all_ipv6_addresses -%}
+      {% for _ip in _ips                                                    -%}
+      {%     if _ip is ansible.utils.in_network neerali_ceph_public_network -%}
+      {%         set hostip = _ip                                           -%}
+      {%     endif                                                          -%}
+      {% endfor                                                             -%}
+      {% if not hostip                                                      -%}
+      {%     set hostip = ansible_default_ipv4.address                      -%}
+      {% endif                                                              -%}
+      {{ hostip }}
+  ansible.builtin.lineinfile:
+    line: >-
+      --transport=tcp
+      --traddr={{ item.hostname }}
+      --trsvcud={{ item.ports[2] }}
+      --host-traddr={{ hostip }}
+    path: "/etc/nvme/discovery.conf"
+    state: present
+  loop: "{{ neerali_ceph_nvme_gws }}"
+  loop_control:
+    label: "{{ item.hostname }}"
+
+- name: Ensure device mapper multipath is enabled
+  ansible.builtin.include_tasks:
+    file: multipath.yaml
+
+- name: Connect to all the discovered NVMe targets
+  become: true
+  ansible.builtin.command:
+    cmd: "nvme connect-all --force --quiet"
+  changed_when: true
+
+- name: Gather the list of subsystem names.
+  become: true
+  ansible.builtin.find:
+    depth: 1
+    file_type: link
+    paths: "/sys/class/nvme-subsystem/"
+  register: _client_subsys_result
+
+- name: Set the IO policy
+  when:
+    - _client_subsys_result.matched > 0
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      echo '{{ neerali_client_nvme_iopolicy }}' >
+      {{ item.path }}
+  changed_when: true
+  loop: "{{ _client_subsys_result.files }}"
+  loop_control:
+    label: "{{ item.path }}"
