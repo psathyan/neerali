@@ -85,7 +85,8 @@
         nvmeof_subsystem: "{{ _subsystem ~ '.' ~ nvmeof_service.group }}"
         nvmeof_gw_listeners: >-
           {{
-            neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_service.group][_subsystem]['listeners']
+            neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_service.group][_subsystem]['listeners'] |
+            default(_nvmeof_gw)
           }}
       ansible.builtin.include_tasks:
         file: listener.yaml
