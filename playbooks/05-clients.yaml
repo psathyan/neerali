@@ -39,3 +39,10 @@
         - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'] is defined
       ansible.builtin.include_role:
         name: client_nvme
+
+    - name: Deploy warp
+      when:
+        - neerali_use_warp is defined
+        - neerali_use_warp | bool
+      ansible.builtin.include_role:
+        name: client_warp
