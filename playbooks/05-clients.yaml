@@ -33,3 +33,9 @@
         - neerali_use_iofiller | bool
       ansible.builtin.include_role:
         name: iofiller
+
+    - name: Configure the NVMe initiators
+      when:
+        - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'] is defined
+      ansible.builtin.include_role:
+        name: client_nvme
