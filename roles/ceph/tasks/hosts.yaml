@@ -23,9 +23,7 @@
   vars:
     _hosts_hosts: >-
       {{
-        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name] |
-        dict2items |
-        map(attribute='key')
+        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name].keys()
       }}
   block:
     - name: Read ceph's public key

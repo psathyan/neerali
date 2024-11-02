@@ -1,0 +1,100 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+- name: Ensure manager daemons are running
+  vars:
+    service_type: mgr
+    service_name: mgr
+  ansible.builtin.include_tasks:
+    file: wait_until.yaml
+
+# We are not reusing wait_unit tasks due to limitation with comparsion.
+- name: Wait until MON daemons are created
+  vars:
+    _node_num: "{{ _ceph_nodes | length }}"
+    _mon_num: "{{ _node_num if _node_num < 5 else 5 }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -euxo pipefail
+      ceph orch ls --service-type mon \
+          --service-name mon \
+          --format json | \
+          jq '.[0].status | select( .size !=0 ) | .size == {{ _mon_num }}'
+  register: _status
+  until: >-
+    _status.stdout is defined and
+    _status.stdout == "true"
+  delay: 10
+  retries: 30
+  changed_when: false
+
+# Above two tasks ensure that the minimal configuration captures all mon
+# daemon details.
+- name: Generate Ceph minimal configuration
+  ansible.builtin.command:
+    cmd: "ceph config generate-minimal-conf"
+  changed_when: true
+  register: _ceph_min_conf_result
+
+- name: Read the admin client keyring
+  ansible.builtin.slurp:
+    src: "/etc/ceph/ceph.client.admin.keyring"
+  register: _ceph_admin_keyring
+
+- name: Ensure the ceph directory exists
+  when:
+    - item not in groups['_admin']
+  ansible.builtin.file:
+    path: "/etc/ceph"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  delegate_to: "{{ item }}"
+  loop: "{{ _ceph_nodes }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Ensure ceph minimal configuration
+  when:
+    - item not in groups['_admin']
+  ansible.builtin.copy:
+    content: "{{ _ceph_min_conf_result.stdout }}"
+    dest: "/etc/ceph/ceph.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  delegate_to: "{{ item }}"
+  loop: "{{ _ceph_nodes }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Copy the admin keyring
+  when:
+    - item not in groups['_admin']
+  ansible.builtin.copy:
+    content: |
+      {{ _ceph_admin_keyring.content | b64decode }}
+      # added - by neearli
+    dest: "/etc/ceph/ceph.client.admin.keyring"
+    owner: root
+    group: root
+    mode: "0644"
+  delegate_to: "{{ item }}"
+  loop: "{{ _ceph_nodes }}"
+  loop_control:
+    label: "{{ item }}"

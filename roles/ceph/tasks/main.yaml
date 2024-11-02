@@ -59,12 +59,14 @@
     label: "{{ dtr.registry }}"
     loop_var: dtr
 
-- name: Ensure manager daemons are running
+- name: Configure the hosts
   vars:
-    service_type: mgr
-    service_name: mgr
+    _ceph_nodes: >-
+      {{
+        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name].keys()
+      }}
   ansible.builtin.include_tasks:
-    file: wait_until.yaml
+    file: hosts_post_add.yaml
 
 - name: Deploy OSD
   ansible.builtin.include_tasks:
