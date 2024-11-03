@@ -43,18 +43,6 @@
         first
       }}
 
-- name: Cache the list of NVMe-oF gateways identified
-  vars:
-    _query: "[?status==`1`].{hostname: hostname, ports: ports}"
-  ansible.builtin.set_fact:
-    cacheable: true
-    neerali_ceph_nvme_gws: >-
-      {{
-        (
-          neerali_ceph_nvme_gws | default([])
-        ) + _nvmeof_gw
-      }}
-
 - name: Perform NVMe-oF target configuration.
   when:
     - neerali_ceph_config[neerali_ceph_cluster_name]['nvmeof']['target'][nvmeof_service.group] is defined

@@ -28,11 +28,20 @@
     state: present
     persistent: present
 
+- name: Gather the NVMe-oF daemons
+  become: true
+  ansible.builtin.command:
+    cmd: "ceph orch ps --daemon_type nvmeof --format json"
+  changed_when: false
+  delegate_to: "{{ groups['_admin'] | first }}"
+  register: _nvmeof_daemon_results
+
 # The third item in the list of ports is the listener port that needs to be
 # configured. This is Ceph behavior.
 - name: Gather the host IP to be used for communication
   become: true
   vars:
+    _query: "[?status==`1`].{hostname: hostname, port: ports[2]}"
     _host_ip: >-
       {% set hostip = ""                                                    -%}
       {% set _ips = ansible_all_ipv4_addresses + ansible_all_ipv6_addresses -%}
@@ -49,11 +58,16 @@
     line: >-
       --transport=tcp
       --traddr={{ item.hostname }}
-      --trsvcud={{ item.ports[2] }}
-      --host-traddr={{ hostip }}
+      --trsvcid={{ item.port }}
+      --host-traddr={{ _host_ip }}
     path: "/etc/nvme/discovery.conf"
     state: present
-  loop: "{{ neerali_ceph_nvme_gws }}"
+  loop: >-
+    {{
+      _nvmeof_daemon_results.stdout |
+      from_json |
+      community.general.json_query(_query)
+    }}
   loop_control:
     label: "{{ item.hostname }}"
 

@@ -19,5 +19,5 @@
 # "neerali_client_nvme"
 
 
-nnerali_client_nvme_packages:
+neerali_client_nvme_packages:
   - nvme-cli
