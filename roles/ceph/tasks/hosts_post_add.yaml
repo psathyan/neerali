@@ -25,15 +25,14 @@
 # We are not reusing wait_unit tasks due to limitation with comparsion.
 - name: Wait until MON daemons are created
   vars:
-    _node_num: "{{ _ceph_nodes | length }}"
-    _mon_num: "{{ _node_num if _node_num < 5 else 5 }}"
+    _mon_num: "{{ (_ceph_nodes | length) if (_ceph_nodes | length) < 5 else 5 }}"
   ansible.builtin.shell:
     cmd: |
       set -euxo pipefail
       ceph orch ls --service-type mon \
           --service-name mon \
           --format json | \
-          jq '.[0].status | select( .size !=0 ) | .size == {{ _mon_num }}'
+          jq '.[0].status | .running == {{ _mon_num | int }}'
   register: _status
   until: >-
     _status.stdout is defined and

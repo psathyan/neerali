@@ -63,7 +63,8 @@
   vars:
     _ceph_nodes: >-
       {{
-        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name].keys()
+        neerali_ceph_nodes_public_ips[neerali_ceph_cluster_name].keys() |
+        community.general.lists_difference(groups['client'])
       }}
   ansible.builtin.include_tasks:
     file: hosts_post_add.yaml
