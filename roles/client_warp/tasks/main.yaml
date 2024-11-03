@@ -19,7 +19,7 @@
   become: true
   ansible.builtin.package:
     name: "{{ neerali_client_warp_rpm }}"
-    state: present
+    disable_gpg_check: true
 
 - name: Ensure the client service is enabled.
   when:
