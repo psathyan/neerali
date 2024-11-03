@@ -20,7 +20,7 @@
 
 
 - name: Cleanup the test environment
-  hosts: admin
+  hosts: _admin
 
   tasks:
     - name: Gather the ceph fsid
@@ -34,14 +34,17 @@
       become: true
       ansible.builtin.command:
         cmd: "ceph orch host ls --format json"
-      register: _ceph_hosts
       changed_when: false
+      register: _ceph_hosts
 
     - name: Disable ceph orchestration
       become: true
       ansible.builtin.command:
         cmd: ceph mgr module disable cephadm
-      changed_when: false
+      register: _mgr_result
+      ignore_errors: true
+      changed_when:
+        - _mgr_result.rc == 0
 
     - name: Purge the ceph cluster
       vars:
@@ -50,23 +53,28 @@
         cmd: >-
           ssh {{ item }}.{{ base_domain }}
           sudo cephadm rm-cluster --force --zap-osds --fsid {{ _fsid }}
-      changed_when: false
+      changed_when: true
+      delegate_to: localhost
       loop: >-
         {{
-          _ceph_hosts.stdout | from_json |
-          map(attribute='hostname')
+          _ceph_hosts.stdout | from_json | map(attribute='hostname')
         }}
       loop_control:
         label: "{{ item }}"
-      delegate_to: localhost
 
     - name: Ensure the directory does not exist
       ansible.builtin.file:
         path: "{{ ansible_user_dir ~ '/neerali-data' }}"
         state: absent
 
-    - name: Cleanup controller data also
+- name: Clean the target node
+  hosts: "{{ neerali_target_host | default('localhost') }}"
+
+  tasks:
+    - name: Ensure the neerali workspace odes not exist
       ansible.builtin.file:
         path: "{{ ansible_user_dir ~ '/neerali-data' }}"
         state: absent
-      delegate_to: localhost
+
+    - name: Clear the facts
+      ansible.builtin.meta: "clear_facts"
