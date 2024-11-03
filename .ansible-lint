@@ -12,7 +12,6 @@ quiet: false
 verbosity: 1
 parseable: true
 offline: true
-var_naming_pattern: "^neerali_[a-z_][a-z0-9_]*$"
 enable_list:
   - fqcn-builtins
   - fqcn[action]
@@ -31,3 +30,4 @@ skip_list:
   - schema[meta]
   - galaxy[no-changelog]
   - jinja[spacing]
+  - var-naming[no-role-prefix]
