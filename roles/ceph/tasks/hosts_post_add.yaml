@@ -86,9 +86,7 @@
   when:
     - item not in groups['_admin']
   ansible.builtin.copy:
-    content: |
-      {{ _ceph_admin_keyring.content | b64decode }}
-      # added - by neearli
+    content: "{{ _ceph_admin_keyring.content | b64decode }} \n"
     dest: "/etc/ceph/ceph.client.admin.keyring"
     owner: root
     group: root
