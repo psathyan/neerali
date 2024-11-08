@@ -21,17 +21,11 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
 
-- name: Copy repo files
-  ansible.builtin.copy:
-    src: "/etc/yum.repos.d"
-    dest: "{{ neerali_fio_artifactdir }}/files"
-    remote_src: true
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
-
 - name: Build neerali fio Image
   become: true
   containers.podman.podman_image:
     name: "{{ neerali_fio_image }}"
     tag: "{{ neerali_fio_tag }}"
     path: "{{ neerali_fio_artifactdir }}/files"
+    build:
+      volume: /etc/yum.repos.d:/etc/yum.repos.d
