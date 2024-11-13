@@ -3,3 +3,8 @@ ansible-lint
 black
 molecule
 openstacksdk
+ibm-vpc
+ibm_cloud_sdk_core
+ibm-cloud-networking-services
+ibm_platform_services
+logging
