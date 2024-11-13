@@ -35,3 +35,10 @@
         - neerali_use_openstack | bool
       ansible.builtin.include_role:
         name: openstack
+
+    - name: Provision systems on ibm cloud
+      when:
+        - neerali_use_ibmc is defined
+        - neerali_use_ibmc | bool
+      ansible.builtin.include_role:
+        name: ibmc

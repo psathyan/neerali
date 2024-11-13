@@ -1,0 +1,87 @@
+---
+# (c) Copyright IBM Corporation
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: Ensure workspace exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - "{{ neerali_ibmc_basedir }}"
+    - "{{ neerali_ibmc_artifactdir }}"
+    - "{{ neerali_ibmc_logdir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create servers
+  when:
+    - neerali_systems_layout.vms is defined
+    - neerali_server_config.driver == "ibmc"
+  vars:
+    neerali_server_action: create
+  ansible.builtin.include_tasks:
+    file: server.yaml
+  loop: "{{ neerali_systems_layout.vms }}"
+  loop_control:
+    loop_var: neerali_server_config
+    label: "{{ neerali_server_config.name }}"
+
+- name: Create neerali systems provisioned map
+  when:
+    - neerali_systems_layout.vms is defined
+  ansible.builtin.set_fact:
+    neerali_ibmc_systems_data: { 'neerali_ibmc_systems_provisioned': "{{ neerali_ibmc_systems_provisioned }}" }
+
+- name: Store systems provisioned data to artifacts
+  when:
+    - neerali_systems_layout.vms is defined
+    - neerali_ibmc_systems_data is defined
+  ansible.builtin.copy:
+    dest: >-
+      {{
+        (neerali_ibmc_artifactdir, 'neerali_ibmc_provisioned_systems.yaml') |
+        ansible.builtin.path_join
+      }}
+    content: "{{ neerali_ibmc_systems_data | to_nice_yaml }}"
+
+- name: Add the provisoned systems to inventory
+  when:
+    - neerali_ibmc_systems_provisioned is defined
+  ansible.builtin.add_host:
+    name: "{{ item.name }}"
+    groups: "{{ item.roles + ['nodes'] }}"
+    ansible_host: "{{ item.ansible_host }}"
+    ansible_user: "{{ item.ansible_ssh_user }}"
+    neerali_ceph_cluster_name: "{{ item.cluster | default('ceph') }}"
+  loop: "{{ neerali_ibmc_systems_provisioned }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Add the ibmc systems to the neerali provisioned list
+  when:
+    - neerali_ibmc_systems_provisioned is defined
+  ansible.builtin.set_fact:
+    neerali_systems_provisioned: >-
+      {{
+        (neerali_systems_provisioned | default([])) + neerali_ibmc_systems_provisioned
+      }}
+
+- name: Wait for compute nodes to be reachable
+  ansible.builtin.wait_for_connection:
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['nodes'] }}"
